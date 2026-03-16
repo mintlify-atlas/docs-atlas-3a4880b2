@@ -1,0 +1,159 @@
+---
+title: Developer Utilities
+description: Six-tab advanced toolkit for WordPress introspection, testing, and database operations — new in v2.9.0.
+---
+
+Developer Utilities (new in v2.9.0) provides six specialist tabs for day-to-day WordPress debugging and development tasks, all pre-authenticated with the current admin session.
+
+<CardGroup cols={2}>
+  <Card title="Hook Explorer" icon="code">
+    Browse every registered `add_action` and `add_filter` hook with source file and line number.
+  </Card>
+  <Card title="REST API Tester" icon="webhook">
+    Built-in Postman-style client, pre-authenticated with the WordPress nonce.
+  </Card>
+  <Card title="Dummy Data Generator" icon="database">
+    Create up to 50 test posts, pages, users, or WooCommerce products for safe bulk cleanup.
+  </Card>
+  <Card title="Rewrite Rules Tester" icon="arrow-right-left">
+    Input any URL path and see the matching rewrite rule and resolved query vars.
+  </Card>
+  <Card title="Object Cache Browser" icon="server">
+    List, inspect, and delete Redis keys or WP internal cache entries.
+  </Card>
+  <Card title="Database Prefix Changer" icon="table">
+    Safely rename the database table prefix with a dry-run preview.
+  </Card>
+</CardGroup>
+
+---
+
+## Hook Explorer
+
+Reads `$wp_filter` directly and presents every registered `add_action` and `add_filter` call as a searchable table.
+
+Each row shows:
+
+| Column | Description |
+|---|---|
+| Hook name | The action or filter tag (e.g. `init`, `the_content`) |
+| Priority | Numeric execution priority |
+| Callback | Function or method name |
+| Source | File path and line number resolved via PHP Reflection |
+
+Use the full-text search box to filter by hook name, callback name, or source file. Useful for tracing which plugins or themes are hooking into a given action.
+
+---
+
+## REST API Tester
+
+A Postman-style request client embedded directly in the admin panel. Every request is automatically authenticated with the current user's WordPress nonce (`X-WP-Nonce` header), so you can test any endpoint that requires admin credentials without configuring external tools.
+
+### Making a request
+
+<Steps>
+  <Step title="Select a namespace">
+    Use the namespace dropdown to browse all registered REST API namespaces. Selecting a namespace populates a list of available routes.
+  </Step>
+  <Step title="Set the method and path">
+    Choose the HTTP method (GET, POST, PUT, DELETE, PATCH) and enter the full path, for example `/wp/v2/posts` or `/wp-manager-pro/v1/dashboard`.
+  </Step>
+  <Step title="Add body and headers">
+    For POST/PUT requests, enter a JSON body in the **Body** tab. Add custom headers in the **Headers** tab if needed.
+  </Step>
+  <Step title="Send and inspect the response">
+    Click **Send**. The response panel shows the HTTP status code, total duration in milliseconds, response headers, and the formatted JSON body.
+  </Step>
+</Steps>
+
+---
+
+## Dummy Data Generator
+
+Creates test content that is safe to remove in bulk at any time.
+
+### Supported content types
+
+- **Posts** — published posts with random titles and lorem ipsum content
+- **Pages** — published pages
+- **Users** — subscriber-role accounts with `@wmp-dummy.test` email addresses
+- **WooCommerce Products** — available only when WooCommerce is active
+
+All generated items are tagged with the `_wmp_dummy_data` postmeta key (or usermeta for users), making bulk cleanup trivial.
+
+<Warning>
+Generated posts and pages are published immediately and visible to site visitors. Never run the Dummy Data Generator on a live production site.
+</Warning>
+
+### Cleanup
+
+Click **Delete All Dummy Data** to remove every item tagged with `_wmp_dummy_data` in a single operation. The stats card shows the current count of dummy items before you commit.
+
+---
+
+## Rewrite Rules Tester
+
+Tests any URL path against WordPress's registered rewrite rules without making a real HTTP request.
+
+### How to use it
+
+<Steps>
+  <Step title="Enter a URL path">
+    Type the relative path you want to test, for example `/shop/product/blue-widget/` or `/2026/03/my-post/`.
+  </Step>
+  <Step title="Read the results">
+    The tester shows the matched rewrite rule regex, the redirect query string (e.g. `index.php?p=123`), and the resolved `$query_vars` array.
+  </Step>
+  <Step title="Expand the full rules table">
+    Click **Show All Rules** to see every registered rewrite rule in order — useful when a URL matches an unexpected rule.
+  </Step>
+</Steps>
+
+---
+
+## Object Cache Browser
+
+Browses keys stored in the active WordPress object cache. Supports two backends:
+
+- **Redis** — uses `SCAN` to iterate keys; displays value type (string, list, set, hash, zset)
+- **WP internal cache** — lists entries by cache group
+
+For each key you can:
+
+- **Inspect** the stored value
+- **Delete** the key immediately
+
+<Note>
+The Object Cache Browser only appears useful when an external persistent cache (Redis, Memcached) is installed. On sites using the default WP in-memory cache the browser shows only the keys created during the current request.
+</Note>
+
+---
+
+## Database prefix changer
+
+Renames every database table from the current prefix (e.g. `wp_`) to a new prefix in a single operation. This is useful when migrating a site that uses the default `wp_` prefix to a more secure custom prefix.
+
+### What the operation does
+
+1. Renames every table whose name starts with the current prefix using `RENAME TABLE`
+2. Updates `option_name` rows in the options table that begin with the old prefix
+3. Updates `meta_key` rows in the usermeta table that begin with the old prefix
+4. Rewrites the `$table_prefix` assignment in `wp-config.php`
+
+### How to use it
+
+<Steps>
+  <Step title="Back up your database">
+    Create a full backup via **Database Backup** before proceeding. The prefix change cannot be automatically reversed.
+  </Step>
+  <Step title="Preview the changes">
+    Click **Preview Changes** (dry run). A table lists every table that will be renamed so you can verify the scope before committing.
+  </Step>
+  <Step title="Confirm and execute">
+    Check the confirmation checkbox, type the new prefix into the confirmation field, and click **Change Prefix**. A second confirmation dialog appears before the operation runs.
+  </Step>
+</Steps>
+
+<Warning>
+The Database Prefix Changer modifies `wp-config.php` and renames live database tables. Always test on a staging clone first. If the operation fails partway through, restore from backup.
+</Warning>

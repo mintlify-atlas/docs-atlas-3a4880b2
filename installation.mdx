@@ -1,0 +1,103 @@
+---
+title: Installation
+description: Install WP Manager Pro from a ZIP file or manually. The plugin requires WordPress 5.9+, PHP 7.4+, and MySQL 5.6+.
+---
+
+## Requirements
+
+| Requirement | Minimum |
+|---|---|
+| WordPress | 5.9+ |
+| PHP | 7.4+ |
+| MySQL / MariaDB | 5.6+ |
+| Browser | Modern (ES2020+) |
+
+<Info>
+  WP Manager Pro is a standard WordPress plugin — no Composer dependencies, no external services required for core functionality.
+</Info>
+
+## Install from ZIP
+
+This is the recommended method for most users.
+
+<Steps>
+  <Step title="Download the ZIP">
+    Download `wp-manager-pro-v2.9.2.zip` from the [GitHub Releases](https://github.com/nurkamol/wp-manager-pro/releases) page.
+  </Step>
+  <Step title="Open the plugin uploader">
+    In your WordPress admin, go to **Plugins → Add New Plugin**, then click **Upload Plugin** at the top of the page.
+  </Step>
+  <Step title="Upload and install">
+    Click **Choose File**, select the ZIP you downloaded, then click **Install Now**.
+  </Step>
+  <Step title="Activate the plugin">
+    After installation completes, click **Activate Plugin**.
+  </Step>
+  <Step title="Open the dashboard">
+    Click **WP Manager** in the WordPress admin sidebar, or click the **Open** link in the Plugins list next to WP Manager Pro.
+  </Step>
+</Steps>
+
+## Manual install
+
+Use this method if you prefer to install via the command line or SFTP.
+
+<Steps>
+  <Step title="Download and unzip">
+    Download the release ZIP from [GitHub Releases](https://github.com/nurkamol/wp-manager-pro/releases), then unzip it into your WordPress plugins directory:
+
+    ```bash
+    unzip wp-manager-pro-v2.9.2.zip -d /path/to/wp-content/plugins/
+    ```
+
+    The resulting directory should be `wp-content/plugins/wp-manager-pro/`.
+  </Step>
+  <Step title="Activate the plugin">
+    In **WP Admin → Plugins**, find **WP Manager Pro** in the list and click **Activate**.
+  </Step>
+  <Step title="Open the dashboard">
+    Click **WP Manager** in the admin sidebar to open the management dashboard.
+  </Step>
+</Steps>
+
+## First-time setup
+
+When the plugin activates for the first time it creates five database tables:
+
+| Table | Purpose |
+|---|---|
+| `{prefix}wmp_notes` | Dashboard notes |
+| `{prefix}wmp_audit_log` | Audit event log |
+| `{prefix}wmp_snippets` | Code snippets |
+| `{prefix}wmp_redirects` | Redirect rules |
+| `{prefix}wmp_email_log` | Email log |
+
+Table creation uses `dbDelta()`, so it is safe to re-activate or update the plugin without data loss.
+
+<Tip>
+  If you update the plugin by replacing files without reactivating, the plugin automatically runs `dbDelta()` on the next page load to apply any schema changes.
+</Tip>
+
+<Warning>
+  WP Manager Pro suppresses all third-party admin notices on its own page and dequeues the WordPress command palette (`wp-commands`) to avoid keyboard shortcut conflicts. This is intentional and does not affect other admin pages.
+</Warning>
+
+## Deactivation and uninstall
+
+Deactivating the plugin:
+
+- Disables maintenance mode automatically (removes `wp-content/maintenance.php` if present).
+- Does **not** delete your notes, settings, or other data stored in `wp_options` and custom tables.
+
+To remove all plugin data, delete the plugin after deactivating it.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Run your first plugin update and enable maintenance mode in five minutes.
+  </Card>
+  <Card title="Introduction" icon="book-open" href="/introduction">
+    Learn about the architecture and full feature set.
+  </Card>
+</CardGroup>

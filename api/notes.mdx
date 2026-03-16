@@ -1,0 +1,145 @@
+---
+title: 'Notes'
+description: 'Create, read, update, and delete color-coded notes stored in the wp_wmp_notes database table.'
+---
+
+Notes are persistent, color-coded records stored in the custom `{prefix}wmp_notes` database table. They are ordered by last-updated time descending.
+
+---
+
+## GET /notes
+
+Returns all notes, ordered by `updated_at` descending.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/notes" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response fields
+
+<ResponseField name="notes" type="object[]" required>
+  Array of note objects.
+  <Expandable title="item properties">
+    <ResponseField name="id" type="string">Note ID (stored as a string from the database).</ResponseField>
+    <ResponseField name="title" type="string">Note title.</ResponseField>
+    <ResponseField name="content" type="string">Note content (HTML allowed, filtered with `wp_kses_post`).</ResponseField>
+    <ResponseField name="color" type="string">Color label, e.g. `"default"`, `"yellow"`, `"green"`, `"red"`, `"blue"`, `"purple"`.</ResponseField>
+    <ResponseField name="created_at" type="string">Creation timestamp in MySQL datetime format.</ResponseField>
+    <ResponseField name="updated_at" type="string">Last updated timestamp in MySQL datetime format.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="total" type="number" required>
+  Total number of notes.
+</ResponseField>
+
+### Example response
+
+```json
+{
+  "notes": [
+    {
+      "id": "3",
+      "title": "Deployment checklist",
+      "content": "<ul><li>Clear cache</li><li>Check logs</li></ul>",
+      "color": "yellow",
+      "created_at": "2024-05-10 09:00:00",
+      "updated_at": "2024-06-01 14:32:00"
+    }
+  ],
+  "total": 1
+}
+```
+
+---
+
+## POST /notes
+
+Creates a new note. Returns `201 Created` on success.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/notes" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "My note", "content": "Remember to check logs.", "color": "yellow"}'
+```
+
+### Request parameters
+
+<ParamField body="title" type="string" required>
+  Note title. Sanitized with `sanitize_text_field()`.
+</ParamField>
+
+<ParamField body="content" type="string">
+  Note body content. HTML is allowed and filtered with `wp_kses_post()`.
+</ParamField>
+
+<ParamField body="color" type="string" default="default">
+  Color label for the note card. Common values: `"default"`, `"yellow"`, `"green"`, `"red"`, `"blue"`, `"purple"`.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="success" type="boolean">`true` on success.</ResponseField>
+<ResponseField name="note" type="object">The newly created note object with all fields including `id`, `created_at`, and `updated_at`.</ResponseField>
+
+---
+
+## PUT /notes/{id}
+
+Updates an existing note. All fields are optional — only the fields included in the request body are updated.
+
+```bash
+curl -X PUT "https://yoursite.com/wp-json/wp-manager-pro/v1/notes/3" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Updated title", "color": "green"}'
+```
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The note ID.
+</ParamField>
+
+### Request parameters
+
+<ParamField body="title" type="string">
+  Updated note title.
+</ParamField>
+
+<ParamField body="content" type="string">
+  Updated note content. HTML filtered with `wp_kses_post()`.
+</ParamField>
+
+<ParamField body="color" type="string">
+  Updated color label.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="success" type="boolean">`true` on success.</ResponseField>
+<ResponseField name="note" type="object">The full updated note object, re-fetched from the database after the update.</ResponseField>
+
+---
+
+## DELETE /notes/{id}
+
+Permanently deletes a note.
+
+```bash
+curl -X DELETE "https://yoursite.com/wp-json/wp-manager-pro/v1/notes/3" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The note ID to delete.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="success" type="boolean">`true` on success.</ResponseField>
+<ResponseField name="message" type="string">`"Note deleted."`</ResponseField>

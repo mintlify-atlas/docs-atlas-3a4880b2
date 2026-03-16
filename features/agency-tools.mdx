@@ -1,0 +1,158 @@
+---
+title: Agency Tools
+description: Client delivery, white-labelling, and professional workflow tools for managing client WordPress sites.
+---
+
+Agency Tools is a five-tab page (new in v2.8.0) that consolidates the features agencies need most: email interception, login page branding, admin UI control, client reporting, and pre-launch pages.
+
+<CardGroup cols={2}>
+  <Card title="Mail Interceptor" icon="envelope">
+    Log every outgoing `wp_mail()` call and optionally block real delivery during development.
+  </Card>
+  <Card title="White-label Login Page" icon="shield">
+    Replace the default `wp-login.php` with your client's logo, colours, and footer text.
+  </Card>
+  <Card title="Admin UI Customiser" icon="layout-dashboard">
+    Hide admin menu items and dashboard widgets for non-administrator roles.
+  </Card>
+  <Card title="Client Report Generator" icon="chart-bar">
+    Generate a standalone HTML health report — download or copy to clipboard.
+  </Card>
+  <Card title="Coming Soon Mode" icon="rocket">
+    Publish a branded pre-launch page with a countdown timer and optional email capture.
+  </Card>
+</CardGroup>
+
+---
+
+## Mail Interceptor
+
+The Mail Interceptor hooks into WordPress's `wp_mail()` function and records every outbound email — recipient, subject, body, content type, and timestamp — in a persistent log.
+
+### Dev mode
+
+When **Dev Mode** is enabled, the recipient address is replaced with `devnull@wmp-intercepted.invalid` before WordPress attempts delivery. No real emails reach end-users while you test forms, notifications, or WooCommerce flows.
+
+<Warning>
+Remember to disable Dev Mode before the site goes live. The toggle state is saved immediately — no page reload required.
+</Warning>
+
+### Email log
+
+Each logged entry shows:
+
+| Field | Description |
+|---|---|
+| Subject | Email subject line |
+| To | Recipient address |
+| Date | Timestamp of the `wp_mail()` call |
+| Status | **Sent** (delivered normally) or **Intercepted** (Dev Mode was on) |
+
+Click **Preview** on any row to open the email body in a modal — HTML emails render in full, plain-text emails display as-is. Click **Resend** to trigger a fresh delivery of that exact message.
+
+Use **Clear Log** to remove all entries.
+
+<Tip>
+Use the Mail Interceptor together with a staging environment to verify transactional emails (password resets, order confirmations) without spamming real inboxes.
+</Tip>
+
+---
+
+## White-label login page
+
+Customise `wp-login.php` with your client's branding. Changes are injected via `wp_add_inline_style('login')` so they load after WordPress's own login stylesheet and correctly override defaults.
+
+### Settings
+
+<AccordionGroup>
+  <Accordion title="Logo">
+    Enter a URL or click **Media** to open the WordPress Media Library picker. A thumbnail preview appears inline once a URL is set. Recommended format: transparent PNG at 220×80 px or wider. The **heading text** field replaces the "Powered by WordPress" tooltip shown when hovering over the logo.
+  </Accordion>
+  <Accordion title="Colours">
+    Set the **background colour** (used when no background image is configured) and the **button colour** (applied to the Log In button). Each field accepts a hex code; a native colour picker overlay is available by clicking the swatch.
+  </Accordion>
+  <Accordion title="Background image">
+    An optional full-screen background image. Click **Media** to pick from the library. When set, the background image takes precedence over the background colour. Recommended: 1920×1080 JPG.
+  </Accordion>
+  <Accordion title="Footer text">
+    Small text rendered below the login form — useful for a copyright line or support contact.
+  </Accordion>
+  <Accordion title="Privacy & Terms links">
+    Toggle **Privacy Policy link** to append the site's built-in Privacy Policy page link below the form. Use the **Custom links HTML** textarea to add Terms of Service, Cookie Policy, or any other anchor tags.
+  </Accordion>
+</AccordionGroup>
+
+### Live preview
+
+A side-by-side preview pane updates in real time as you adjust any setting, so you can see exactly how the login page will look before saving.
+
+---
+
+## Admin UI customiser
+
+Hide specific WordPress admin menu items or dashboard widgets for users who do not have the Administrator role. Administrators always see the full interface regardless of these settings.
+
+<Note>
+Hidden items are applied only to **non-administrator** roles. This is a visibility filter — it does not change user capabilities.
+</Note>
+
+Two lists are shown side by side:
+
+- **Admin Menu Items** — every top-level menu entry registered in `$menu`. Check items to hide them.
+- **Dashboard Widgets** — every widget registered in `wp_dashboard_setup`. Widgets also show their context (normal, side, column3, column4).
+
+If either list appears empty, open the WordPress Admin Dashboard at least once so WordPress has a chance to register all menus and widgets.
+
+Click **Save Admin UI Settings** to persist the selection.
+
+---
+
+## Client report generator
+
+Generates a self-contained HTML file summarising the current site's health, suitable for handing to a client after a maintenance session.
+
+### Report contents
+
+- **Health score** (0–100 ring chart) — computed from SSL status, pending updates, `WP_DEBUG` state, and recent backup
+- WordPress version, PHP version, database size
+- SSL certificate status
+- `WP_DEBUG` on/off
+- Pending update count
+- Last backup timestamp
+- Active plugins list with version numbers and update availability
+- Active theme name, version, and author
+
+### Generating and exporting
+
+Click **Generate Report** to fetch the current data from the server. The report preview appears in the page with the full stats grid and plugin list. Use **Download Report** to save the file as `site-report-<site-name>.html`, or **Copy HTML** to put the raw HTML on the clipboard for pasting into an email or document.
+
+---
+
+## Coming Soon mode
+
+Displays a branded pre-launch page to all visitors while administrators see the live site normally. Unlike Maintenance Mode, Coming Soon serves a `200 OK` response — important for SEO and social link previews.
+
+### Settings
+
+| Setting | Description |
+|---|---|
+| Active toggle | Enable or disable the coming soon page instantly |
+| Logo image | Optional logo picked from the Media Library |
+| Background image | Optional full-screen background (overrides background colour) |
+| Background colour | Solid background colour (default: `#0f172a`) |
+| Accent colour | Countdown tile border and highlight colour (default: `#6366f1`) |
+| Heading | Main headline on the coming soon page |
+| Message | Supporting text below the headline |
+| Launch date | Sets the countdown timer; leave empty to hide the timer |
+
+### Countdown timer
+
+When a launch date is set, the page displays four glass-card tiles showing days, hours, minutes, and seconds remaining. The tiles use the accent colour for their borders.
+
+### Email capture
+
+Enable **Email capture form** to show a "Notify Me" subscription input on the coming soon page. Submitted addresses are stored server-side. View the captured list in the Email Capture card — copy all addresses to the clipboard or clear the list with one click.
+
+<Tip>
+Combine Coming Soon mode with the **Mail Interceptor** during pre-launch testing to capture notification emails without sending them to real addresses.
+</Tip>

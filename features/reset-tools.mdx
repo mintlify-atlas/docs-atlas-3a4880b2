@@ -1,0 +1,81 @@
+---
+title: Reset Tools
+description: Safely delete WordPress content by type for development and testing environments, with live counts and double confirmation.
+---
+
+Reset Tools lets you bulk-delete WordPress content by type to quickly return a development or staging site to a clean state. All deletions use WordPress core functions — no direct database queries — so hooks, actions, and metadata are handled correctly.
+
+<Warning>
+Reset Tools is intended for **development and staging environments only**. All operations are permanent and cannot be undone. Do not use on a live production site.
+</Warning>
+
+## What Reset Tools deletes
+
+| Content type | What is deleted |
+|---|---|
+| Posts | All posts and their postmeta |
+| Pages | All pages and their postmeta |
+| Comments | All comments and commentmeta |
+| Media | All attachment posts and their physical files from disk |
+| Non-admin users | All user accounts that do not have the Administrator role |
+
+## What Reset Tools does NOT delete
+
+- Administrator user accounts
+- Plugin settings stored in `wp_options`
+- WP Manager Pro configuration (branding, SMTP, snippets, redirects, etc.)
+- Database backup files in `wp-content/wmp-backups/`
+- Custom database tables created by plugins
+- Theme files and plugin files
+
+## Live count preview
+
+Before you select anything, the page loads current counts from the server:
+
+```
+Posts        42
+Pages         8
+Comments    156
+Media        93
+Non-admin     5
+```
+
+Counts refresh after a successful reset so you can verify the result immediately.
+
+## Performing a reset
+
+<Steps>
+  <Step title="Select content types">
+    Check the checkbox for each content type you want to delete. Each card shows the current item count. Selected cards highlight in red.
+  </Step>
+  <Step title="Check the irreversibility confirmation">
+    Check the **I understand this is irreversible** box at the bottom of the form. This is required before the Execute Reset button becomes active.
+  </Step>
+  <Step title="Click Execute Reset">
+    Click the **Execute Reset** button. A second confirmation dialog opens listing exactly what will be deleted, with item counts, and the warning that this cannot be undone.
+  </Step>
+  <Step title="Confirm in the dialog">
+    Click **Yes, Delete Everything** in the confirmation dialog. The reset runs and a toast notification confirms what was deleted.
+  </Step>
+</Steps>
+
+## Safety design
+
+<CardGroup cols={2}>
+  <Card title="Double confirmation" icon="shield-check">
+    Two separate confirmations are required before any data is deleted — a checkbox and a modal dialog.
+  </Card>
+  <Card title="Core functions only" icon="wordpress">
+    All deletions call `wp_delete_post()`, `wp_delete_comment()`, `wp_delete_attachment()`, and `wp_delete_user()` — WordPress's own API, ensuring all hooks fire and orphaned data is cleaned up.
+  </Card>
+  <Card title="Admin accounts protected" icon="user-shield">
+    Users with the Administrator role are never deleted, regardless of the selection.
+  </Card>
+  <Card title="Settings preserved" icon="settings">
+    Plugin configuration, code snippets, redirect rules, SMTP settings, and branding are stored in `wp_options` and custom tables — none of which are touched by Reset Tools.
+  </Card>
+</CardGroup>
+
+<Note>
+The `confirm: true` flag is required in the REST API payload (`POST /reset/execute`) and is enforced server-side. Requests without it are rejected, preventing accidental resets from scripts or API clients.
+</Note>

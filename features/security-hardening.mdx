@@ -1,0 +1,96 @@
+---
+title: 'Hardening'
+description: 'Disable XML-RPC, hide the WordPress version string, and block individual IPs or CIDR ranges — all enforced before any page output is sent.'
+icon: 'shield-check'
+---
+
+The **Hardening** tab reduces the attack surface of your WordPress installation with three independent toggles and an IP blocklist. Changes take effect on the next page request — no server restart required.
+
+## WordPress hardening toggles
+
+### Disable XML-RPC
+
+XML-RPC (`xmlrpc.php`) is a legacy remote-procedure interface that is rarely needed on modern sites but is a common target for credential-stuffing and DDoS amplification attacks.
+
+Enabling **Disable XML-RPC** applies the WordPress `xmlrpc_enabled` filter and returns `false`, which causes WordPress to respond with an `HTTP 403` to all XML-RPC requests.
+
+<Note>
+If you use a plugin or service that relies on XML-RPC (for example, the Jetpack connection, certain publishing clients, or the WordPress mobile app using older authentication), disabling it will break that integration. Check before enabling.
+</Note>
+
+### Hide WordPress version
+
+By default, WordPress broadcasts its version number in:
+- The `<meta name="generator" content="WordPress X.Y.Z">` tag in the `<head>`
+- The `?ver=X.Y.Z` query string appended to enqueued scripts and stylesheets
+
+Enabling **Hide WordPress Version** removes the generator meta tag and strips the `?ver=` parameter from all script and style URLs. This makes it harder for automated scanners to fingerprint your exact WordPress version.
+
+### Saving hardening settings
+
+Toggle the switches to your desired state and click **Save Hardening Settings**. Both settings are stored independently in `wp_options` and take effect immediately.
+
+---
+
+## IP blocklist
+
+The IP Blocklist lets you permanently deny access from specific IP addresses or entire subnets before any WordPress code runs for those visitors.
+
+### How enforcement works
+
+- The blocklist is stored in `wp_options` under the key `wmp_ip_blocklist`.
+- On every WordPress request, the `init` hook fires `check_ip_blocklist()` before any output is sent.
+- The visitor's IP is resolved from (in order): `HTTP_CF_CONNECTING_IP`, `HTTP_X_REAL_IP`, `HTTP_X_FORWARDED_FOR`, `REMOTE_ADDR`.
+- If the IP matches any entry in the list, WordPress calls `wp_die('Access denied.', 'Forbidden', ['response' => 403])` and halts execution.
+
+### CIDR matching
+
+For range entries, the controller uses a bitwise mask comparison:
+
+```php
+$mask = $bits === 0 ? 0 : ( ~0 << ( 32 - $bits ) );
+return ( $ip_long & $mask ) === ( $net_long & $mask );
+```
+
+This means `10.0.0.0/24` will block every address from `10.0.0.0` through `10.0.0.255`.
+
+### Adding a blocked IP or range
+
+<Steps>
+  <Step title="Open Security → Hardening">
+    In the WP Admin sidebar, click **WP Manager → Security**, then select the **Hardening** tab.
+  </Step>
+  <Step title="Enter the IP or CIDR range">
+    Type a single IPv4 address (e.g. `203.0.113.5`) or a CIDR range (e.g. `10.0.0.0/24`) into the **IP or CIDR** field.
+  </Step>
+  <Step title="Add an optional note">
+    Use the **Note** field to record why you blocked this address — for example, `Repeated spam signups`.
+  </Step>
+  <Step title="Click Block">
+    Click **Block**. The entry is validated, saved, and appears in the list below immediately.
+  </Step>
+</Steps>
+
+### Removing a blocked entry
+
+Click **Remove** in the row for any entry. The IP or CIDR range is deleted from `wp_options` and enforcement stops on the next request.
+
+### Validation rules
+
+The API accepts:
+- Any value that passes PHP `FILTER_VALIDATE_IP` (IPv4 or IPv6 addresses)
+- Any value matching the CIDR pattern `digits/prefix` (e.g. `192.168.1.0/24`)
+
+Duplicate IPs are rejected with a `409 Conflict` response.
+
+<Warning>
+Blocking your own IP or a shared office IP range will lock you out of the site. Always verify the IP you are blocking before saving.
+</Warning>
+
+### Blocklist table columns
+
+| Column | Description |
+|---|---|
+| IP / CIDR | The blocked address or range |
+| Note | Optional description you provided |
+| Added | Date the entry was created |

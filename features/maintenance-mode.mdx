@@ -1,0 +1,136 @@
+---
+title: 'Maintenance Mode'
+description: 'Put your WordPress site in maintenance mode with a fully customizable branded page, live preview, countdown timer, and bypass controls.'
+---
+
+Maintenance Mode displays a styled HTML page to all visitors while you work on the site. Administrators always bypass it. Settings and activation state are independent — you can design the page without taking the site offline.
+
+## Enabling and disabling
+
+Navigate to **WP Manager → Maintenance** in the admin sidebar.
+
+The status banner at the top of the page shows whether maintenance mode is currently **Active** or **Inactive**. Use the **Enable / Disable** button to toggle the live state. The current settings are sent to the server at the same time, so the page you designed is what visitors see immediately.
+
+<Note>
+Administrators always see the site normally regardless of the maintenance state. You can also grant bypass access to other roles in the **Access & Extras** tab.
+</Note>
+
+<Warning>
+While maintenance mode is active, regular visitors cannot access any content on your site. Monitor the amber status banner as a reminder.
+</Warning>
+
+## Content tab
+
+Set the copy that appears on the maintenance page.
+
+| Field | Default | Notes |
+|---|---|---|
+| Page Title | `Site Under Maintenance` | Shown as the main heading |
+| Message | `We are performing scheduled maintenance…` | Body text below the heading |
+| Show Badge | On | Toggles the status pill at the top of the page |
+| Badge Text | `Maintenance Mode` | Up to 30 characters |
+
+## Appearance tab
+
+### Gradient presets
+
+Six one-click gradient themes are available:
+
+<CardGroup cols={3}>
+  <Card title="Midnight">
+    Deep navy `#1e1e2e → #0f3460` with a blue accent.
+  </Card>
+  <Card title="Sunset">
+    Warm coral `#ff6b6b → #ffa500` with a white accent.
+  </Card>
+  <Card title="Forest">
+    Dark green `#1a3a2a → #2d6a4f` with a mint accent.
+  </Card>
+  <Card title="Royal">
+    Deep purple-teal `#2d1b69 → #11998e` with a lavender accent.
+  </Card>
+  <Card title="Slate">
+    Dark slate `#1e293b → #334155` with a cool grey accent.
+  </Card>
+  <Card title="Candy">
+    Vivid purple-red `#833ab4 → #fd1d1d` with a gold accent.
+  </Card>
+</CardGroup>
+
+Clicking a preset fills the color pickers below with that theme's values. You can then adjust individual colors freely.
+
+### Custom color pickers
+
+Four hex-editable color fields let you build any gradient:
+
+- **Background Start** — left/top color of the gradient
+- **Background End** — right/bottom color of the gradient
+- **Accent / Divider** — the short horizontal rule and countdown tile color
+- **Text Color** — all heading and body text
+
+Each field has a native color picker swatch alongside the hex input.
+
+### Emoji icon picker
+
+The large centered icon above the title uses an emoji that floats up and down in the live page with a CSS animation. Eight presets are available:
+
+`⚙️` `🔧` `🚀` `🛠️` `⚡` `🌙` `🔒` `🎯`
+
+Select one of the presets or type any emoji directly into the custom input field (up to 8 characters).
+
+## Extras tab (Access & Extras)
+
+### Countdown timer
+
+Toggle **Show Countdown Timer** on to display a live `Days / Hrs / Min / Sec` countdown on the maintenance page. Set the **Countdown End Time** using the datetime picker. The timer ticks in real time and is visible in the live preview pane.
+
+If the countdown timer is off, the **Expected End Time** field is still available as an optional reference you can mention in your message text.
+
+### Bypass roles
+
+Logged-in users with selected WordPress roles can view the site normally during maintenance. Administrators always bypass. Check any combination of available roles (Editor, Author, etc.) to extend access.
+
+### Maintenance scope
+
+Choose which pages trigger the maintenance screen:
+
+| Option | Behaviour |
+|---|---|
+| Whole Site | Every request from non-bypassed visitors shows the maintenance page |
+| Home Page Only | Only the front page is blocked |
+| Specific Paths | Block a custom list of URL paths (one per line, wildcards supported) |
+
+Wildcard example: `/shop/*` blocks all URLs under `/shop/`.
+
+### Admin bar toggle
+
+When enabled, a maintenance on/off switch appears in the WordPress admin toolbar so you can toggle the state without visiting this page.
+
+### Secret bypass URL
+
+Generate a secret key that lets non-logged-in users preview the site during maintenance. Visiting `yourdomain.com?wmp_preview=YOUR_KEY` sets a 7-day cookie and shows the live site. Use the refresh icon to auto-generate a random 16-character key, or type your own. Copy the full URL with the clipboard button.
+
+<Tip>
+Change the bypass key at any time to invalidate old links. Save settings after changing the key for it to take effect.
+</Tip>
+
+## Live preview pane
+
+The right column (on wide screens) shows a live preview of the maintenance page that updates in real time as you adjust any setting — colors, icon, text, countdown. The preview includes the floating emoji animation and a ticking countdown if one is configured.
+
+## Saving settings independently
+
+Click **Save Settings** to persist your design changes without changing the active maintenance state. This lets you prepare and fine-tune the page while the site remains online, then enable maintenance in one click when you are ready.
+
+## How the maintenance page works
+
+When maintenance mode is enabled, WP Manager Pro writes a `wp-content/maintenance.php` file. WordPress's own loading sequence checks for this file before rendering any page — if found, it includes it and exits. The generated file is a standalone HTML document with fully inline CSS, containing your title, message, gradient, icon, badge, and countdown data.
+
+The file is **automatically deleted** when you:
+
+- Disable maintenance mode via the toggle
+- Deactivate the WP Manager Pro plugin
+
+<Note>
+Deactivating the plugin removes the maintenance file. It does **not** delete your saved settings from `wp_options` — those are only cleared if you delete the plugin entirely.
+</Note>

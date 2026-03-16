@@ -1,0 +1,293 @@
+---
+title: 'Cron'
+description: 'Browse, trigger, and delete WP-Cron events. Manage custom schedules. Check cron health.'
+---
+
+<Info>
+  All endpoints require a valid WordPress nonce in the `X-WP-Nonce` header and the `manage_options` capability. Added in v2.1.0.
+</Info>
+
+**Base URL:** `{site_url}/wp-json/wp-manager-pro/v1`
+
+---
+
+## GET /cron/events
+
+Returns all scheduled cron events sorted by next-run timestamp ascending.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/cron/events" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+An array of event objects.
+
+<ResponseField name="[].hook" type="string">
+  The WordPress action hook name.
+</ResponseField>
+
+<ResponseField name="[].timestamp" type="number">
+  Unix timestamp of the next scheduled run.
+</ResponseField>
+
+<ResponseField name="[].next_run_human" type="string">
+  Human-readable next-run description (e.g. `in 5 minutes`, `2 hours ago`).
+</ResponseField>
+
+<ResponseField name="[].schedule" type="string">
+  Schedule key (e.g. `hourly`, `twicedaily`). Empty for one-time events.
+</ResponseField>
+
+<ResponseField name="[].schedule_label" type="string">
+  Human-readable schedule name.
+</ResponseField>
+
+<ResponseField name="[].interval" type="number">
+  Schedule interval in seconds.
+</ResponseField>
+
+<ResponseField name="[].args" type="array">
+  Arguments passed to the hook callback.
+</ResponseField>
+
+<ResponseField name="[].is_core" type="boolean">
+  Whether this event belongs to WordPress core.
+</ResponseField>
+
+---
+
+## POST /cron/run
+
+Manually trigger a cron event immediately, regardless of its next scheduled time.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/cron/run" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"hook": "wp_update_plugins"}'
+```
+
+### Parameters
+
+<ParamField body="hook" type="string" required>
+  The hook name to trigger via `do_action_ref_array`.
+</ParamField>
+
+<ParamField body="args" type="array">
+  Arguments to pass to the hook callback.
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether the hook fired without throwing a `Throwable`.
+</ResponseField>
+
+<ResponseField name="hook" type="string">
+  The hook name that was triggered.
+</ResponseField>
+
+<ResponseField name="duration" type="number">
+  Execution time in milliseconds.
+</ResponseField>
+
+<ResponseField name="output" type="string">
+  Any output captured from the hook callback.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if an exception was thrown, otherwise `null`.
+</ResponseField>
+
+---
+
+## DELETE /cron/event
+
+Unschedule all occurrences of a hook, or a single specific occurrence when `timestamp` and `args` are provided.
+
+```bash
+curl -X DELETE "https://yoursite.com/wp-json/wp-manager-pro/v1/cron/event" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"hook": "my_custom_cron_job"}'
+```
+
+### Parameters
+
+<ParamField body="hook" type="string" required>
+  The hook name to unschedule.
+</ParamField>
+
+<ParamField body="timestamp" type="number">
+  Unix timestamp of the specific event to remove. Required together with `args` to remove a single occurrence.
+</ParamField>
+
+<ParamField body="args" type="array">
+  Arguments of the specific event to remove.
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether the event was unscheduled.
+</ResponseField>
+
+<ResponseField name="hook" type="string">
+  The hook that was removed.
+</ResponseField>
+
+---
+
+## GET /cron/schedules
+
+Returns all registered cron schedules (built-in and custom), sorted by interval ascending.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/cron/schedules" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+An array of schedule objects.
+
+<ResponseField name="[].key" type="string">
+  Schedule key (e.g. `hourly`, `my_every_four_hours`).
+</ResponseField>
+
+<ResponseField name="[].display" type="string">
+  Human-readable name (e.g. `Once Hourly`).
+</ResponseField>
+
+<ResponseField name="[].interval" type="number">
+  Interval in seconds.
+</ResponseField>
+
+<ResponseField name="[].is_custom" type="boolean">
+  Whether this schedule was created via WP Manager Pro.
+</ResponseField>
+
+---
+
+## POST /cron/schedules
+
+Create a custom cron schedule. The schedule becomes available for use by plugins immediately after creation.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/cron/schedules" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"key": "every_four_hours", "display": "Every Four Hours", "interval": 14400}'
+```
+
+### Parameters
+
+<ParamField body="key" type="string" required>
+  Snake-case schedule key. Must be unique.
+</ParamField>
+
+<ParamField body="display" type="string" required>
+  Human-readable display name.
+</ParamField>
+
+<ParamField body="interval" type="number" required>
+  Interval in seconds. Minimum value is `60`.
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether the schedule was created.
+</ResponseField>
+
+<ResponseField name="key" type="string">
+  The schedule key.
+</ResponseField>
+
+<ResponseField name="display" type="string">
+  The display name.
+</ResponseField>
+
+<ResponseField name="interval" type="number">
+  The interval in seconds.
+</ResponseField>
+
+---
+
+## DELETE /cron/schedules
+
+Delete a custom schedule created via WP Manager Pro. Built-in WordPress schedules cannot be deleted.
+
+```bash
+curl -X DELETE "https://yoursite.com/wp-json/wp-manager-pro/v1/cron/schedules" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"key": "every_four_hours"}'
+```
+
+### Parameters
+
+<ParamField body="key" type="string" required>
+  The key of the custom schedule to delete.
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether the schedule was deleted.
+</ResponseField>
+
+<ResponseField name="key" type="string">
+  The key that was removed.
+</ResponseField>
+
+---
+
+## GET /cron/health
+
+Returns cron health indicators including overdue events, configuration constants, and suggested server cron commands.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/cron/health" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="disabled" type="boolean">
+  Whether `DISABLE_WP_CRON` is set to `true`.
+</ResponseField>
+
+<ResponseField name="alternate_cron" type="boolean">
+  Whether `ALTERNATE_WP_CRON` is enabled.
+</ResponseField>
+
+<ResponseField name="lock_timeout" type="number">
+  Value of `WP_CRON_LOCK_TIMEOUT` in seconds (default 60).
+</ResponseField>
+
+<ResponseField name="doing_cron" type="boolean">
+  Whether a `doing_cron` transient is currently set.
+</ResponseField>
+
+<ResponseField name="total_events" type="number">
+  Total number of scheduled events.
+</ResponseField>
+
+<ResponseField name="overdue_count" type="number">
+  Number of events that should have fired but have not.
+</ResponseField>
+
+<ResponseField name="overdue_events" type="array">
+  Up to 10 overdue event details, each with `hook`, `timestamp`, and `overdue_s` (seconds overdue).
+</ResponseField>
+
+<ResponseField name="real_cron_command" type="string">
+  A ready-to-copy server crontab entry for running WP-Cron via `curl`.
+</ResponseField>
+
+<ResponseField name="wp_cli_command" type="string">
+  WP-CLI command equivalent: `wp cron event run --due-now`.
+</ResponseField>

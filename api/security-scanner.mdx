@@ -1,0 +1,238 @@
+---
+title: 'Security Scanner'
+description: 'Scan for malware, check plugin and theme vulnerabilities, verify SSL certificates, and assess core WordPress and PHP version status.'
+---
+
+<Info>
+  All endpoints require a valid WordPress nonce in the `X-WP-Nonce` header and the `manage_options` capability. Added in v2.7.0.
+</Info>
+
+**Base URL:** `{site_url}/wp-json/wp-manager-pro/v1`
+
+---
+
+## GET /scanner/malware
+
+Scans PHP, JS, and HTML files in the plugins and/or themes directories for known malicious code patterns. Up to 8,000 files are scanned; files larger than 512 KB are skipped.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/scanner/malware?scope=all" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Parameters
+
+<ParamField query="scope" type="string" default="all">
+  Which directories to scan. Accepted values: `all`, `plugins`, `themes`.
+</ParamField>
+
+### Detected patterns
+
+| Pattern ID | Severity | Description |
+|---|---|---|
+| `eval_base64` | critical | `eval(base64_decode(…))` |
+| `eval_gzip` | critical | `eval(gzinflate/gzuncompress/gzdecode(…))` |
+| `eval_rot13` | critical | `eval(str_rot13(…))` |
+| `preg_replace_e` | critical | `preg_replace` with `/e` modifier |
+| `assert_request` | critical | `assert()` with `$_POST`/`$_GET` input |
+| `system_request` | critical | `system`/`exec`/`passthru` with user input |
+| `shell_exec_request` | critical | `shell_exec()` with user input |
+| `create_function` | warning | `create_function()` — commonly abused |
+| `base64_decode_long` | warning | Base64 string longer than 500 characters |
+| `variable_function_call` | warning | Dynamic function call `$x($y)` with user input |
+| `webshell_marker` | critical | Known webshell strings (FilesMan, r57, c99) |
+| `js_unescape` | warning | `document.write(unescape(…))` |
+| `hex_encoded_string` | warning | Long hex-encoded string in `eval` |
+
+### Response
+
+<ResponseField name="scanned" type="number">
+  Number of files examined.
+</ResponseField>
+
+<ResponseField name="clean" type="boolean">
+  `true` when no findings were detected.
+</ResponseField>
+
+<ResponseField name="scope" type="string">
+  The scope used for the scan.
+</ResponseField>
+
+<ResponseField name="findings" type="array">
+  <Expandable title="finding properties">
+    <ResponseField name="area" type="string">Directory area: `plugins` or `themes`.</ResponseField>
+    <ResponseField name="file" type="string">Relative file path (from `wp-content/`).</ResponseField>
+    <ResponseField name="pattern" type="string">Human-readable pattern description.</ResponseField>
+    <ResponseField name="severity" type="string">`critical` or `warning`.</ResponseField>
+    <ResponseField name="line" type="number">Line number where the pattern was found.</ResponseField>
+    <ResponseField name="snippet" type="string">Up to 200 characters from the matching line.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## GET /scanner/vulns
+
+Checks all installed plugins and themes against the [WPScan CVE API](https://wpscan.com) (free tier: 25 requests/day). Results are sorted so items with vulnerabilities appear first.
+
+<Note>
+  A WPScan API key is required. Configure it via `POST /scanner/api-key` or the Security Scanner settings tab. Register a free key at [wpscan.com/register](https://wpscan.com/register).
+</Note>
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/scanner/vulns" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="results" type="array">
+  <Expandable title="result properties">
+    <ResponseField name="type" type="string">`plugin` or `theme`.</ResponseField>
+    <ResponseField name="slug" type="string">Plugin or theme slug.</ResponseField>
+    <ResponseField name="name" type="string">Friendly display name.</ResponseField>
+    <ResponseField name="version" type="string">Installed version.</ResponseField>
+    <ResponseField name="latest_version" type="string | null">Latest available version from WPScan.</ResponseField>
+    <ResponseField name="vulnerabilities" type="array">
+      Array of vulnerability objects, each with `id`, `title`, `type`, `severity` (`critical`/`high`/`medium`/`low`/`unknown`), `score` (CVSS), `fixed_in`, and `references`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="total" type="number">
+  Total plugins and themes checked.
+</ResponseField>
+
+<ResponseField name="with_vulns" type="number">
+  Count of items that have at least one unpatched vulnerability.
+</ResponseField>
+
+---
+
+## GET /scanner/ssl
+
+Verifies the SSL certificate for the site domain using a PHP `stream_socket_client` connection to port 443.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/scanner/ssl" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="host" type="string">
+  The site hostname checked.
+</ResponseField>
+
+<ResponseField name="https" type="boolean">
+  Whether the site URL uses HTTPS.
+</ResponseField>
+
+<ResponseField name="valid" type="boolean">
+  Whether the certificate is currently valid (not expired or pre-valid).
+</ResponseField>
+
+<ResponseField name="days_remaining" type="number">
+  Days until the certificate expires.
+</ResponseField>
+
+<ResponseField name="error" type="string | null">
+  Error message if the check failed, otherwise `null`.
+</ResponseField>
+
+<ResponseField name="cert" type="object">
+  <Expandable title="certificate properties">
+    <ResponseField name="subject" type="string">Certificate common name (CN).</ResponseField>
+    <ResponseField name="issuer" type="string">Certificate authority name.</ResponseField>
+    <ResponseField name="valid_from" type="string">ISO-8601 not-before date.</ResponseField>
+    <ResponseField name="valid_to" type="string">ISO-8601 not-after date.</ResponseField>
+    <ResponseField name="san" type="string">Subject Alternative Name entries.</ResponseField>
+    <ResponseField name="serial" type="string">Certificate serial number (hex).</ResponseField>
+    <ResponseField name="version" type="string">X.509 version.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## GET /scanner/core
+
+Checks the installed WordPress version against the latest available release, and flags the PHP version against its end-of-life schedule.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/scanner/core" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="wp" type="object">
+  <Expandable title="WordPress info">
+    <ResponseField name="version" type="string">Installed WordPress version.</ResponseField>
+    <ResponseField name="latest" type="string | null">Latest available version from wordpress.org.</ResponseField>
+    <ResponseField name="is_latest" type="boolean">Whether the installed version is current.</ResponseField>
+    <ResponseField name="site_url" type="string">Site URL.</ResponseField>
+    <ResponseField name="multisite" type="boolean">Whether this is a multisite installation.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="php" type="object">
+  <Expandable title="PHP info">
+    <ResponseField name="version" type="string">Full PHP version string.</ResponseField>
+    <ResponseField name="short" type="string">Major.minor version (e.g. `8.2`).</ResponseField>
+    <ResponseField name="is_eol" type="boolean">Whether this PHP version has reached end-of-life.</ResponseField>
+    <ResponseField name="eol_soon" type="boolean">Whether EOL is within 90 days.</ResponseField>
+    <ResponseField name="eol_date" type="string | null">EOL date string (e.g. `2026-12-31`), or `null` if unknown.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="db" type="object">
+  <Expandable title="database info">
+    <ResponseField name="version" type="string">MySQL or MariaDB version.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## GET /scanner/api-key
+
+Returns whether a WPScan API key is configured. The raw key is never exposed — only the last 4 characters are shown.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/scanner/api-key" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="configured" type="boolean">
+  Whether an API key is stored.
+</ResponseField>
+
+<ResponseField name="masked" type="string">
+  Masked key (e.g. `**************ab12`).
+</ResponseField>
+
+---
+
+## POST /scanner/api-key
+
+Save or clear the WPScan API key.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/scanner/api-key" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"api_key": "your-wpscan-key"}'
+```
+
+### Parameters
+
+<ParamField body="api_key" type="string" required>
+  Your WPScan API key. Pass an empty string to clear the key.
+</ParamField>
+
+### Response
+
+<ResponseField name="saved" type="boolean">
+  Whether the key was saved.
+</ResponseField>

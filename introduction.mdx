@@ -1,0 +1,106 @@
+---
+title: Introduction
+description: WP Manager Pro is an agency-ready WordPress management suite — a single React-powered control panel for every critical aspect of your WordPress sites.
+---
+
+**WP Manager Pro** replaces the need for multiple separate admin plugins by providing one fast, modern interface for managing plugins, themes, files, databases, users, security, and more. Install it as a standard WordPress plugin and a full React-powered control panel appears under your WP Admin menu.
+
+All operations run through a secured REST API namespace (`wp-manager-pro/v1`). Every endpoint requires the `manage_options` WordPress capability, so only site administrators can access the dashboard.
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install WP Manager Pro from a ZIP file or manually. Takes under two minutes.
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Run your first plugin update and enable maintenance mode in five minutes.
+  </Card>
+</CardGroup>
+
+## Why WP Manager Pro?
+
+Managing a WordPress site typically means juggling many separate plugins — one for backups, one for security, one for file editing, one for redirects. WP Manager Pro consolidates all of that into a single, cohesive interface that loads fast and stays out of your way.
+
+For agencies managing multiple client sites, the consolidated toolset reduces onboarding friction: every site gets the same familiar dashboard, the same keyboard shortcuts, and the same REST API surface.
+
+## Architecture overview
+
+WP Manager Pro is split into two layers that communicate entirely through the WordPress REST API.
+
+**Frontend — React application**
+
+The frontend is a single-page React 19 application written in TypeScript. It is compiled by Vite and served as two static files (`assets/build/index.js` and `assets/build/style.css`) that WordPress enqueues on the plugin's admin page. React Router (HashRouter) handles client-side navigation between sections. TanStack Query manages server state and caching. The Monaco Editor (VS Code engine) is embedded inside the File Manager and Code Snippets editor.
+
+When a user navigates to **WP Admin → WP Manager**, WordPress renders a single `<div id="wp-manager-pro-root">` element. `main.tsx` mounts the React app into that container. From that point on, all navigation and data fetching happens within the React app — no full page reloads.
+
+**Backend — PHP REST API**
+
+The backend is a standard WordPress plugin written in PHP 7.4+. A singleton `Plugin` class bootstraps all hooks and loads 27 REST API controllers. Every controller registers its routes under the `wp-manager-pro/v1` namespace via `rest_api_init`. All routes use WordPress nonce authentication (`wp_rest`) and enforce the `manage_options` capability.
+
+```
+Browser
+  └── React app (HashRouter)
+        └── TanStack Query fetch
+              └── X-WP-Nonce header
+                    └── wp-json/wp-manager-pro/v1/...
+                          └── PHP controller
+                                └── WordPress core functions
+```
+
+## Tech stack
+
+**Frontend**
+
+| Package | Version | Purpose |
+|---|---|---|
+| React | 19 | UI framework |
+| TypeScript | 5.7 | Type safety |
+| Vite | 6 | Build tool |
+| Tailwind CSS | 3.4 | Utility-first styling |
+| shadcn/ui | — | Component library (Radix UI) |
+| TanStack Query | v5 | Server state and caching |
+| React Router | v7 | Client-side routing |
+| Monaco Editor | latest | VS Code editor engine |
+| Lucide React | 0.469 | Icon set |
+| Sonner | 1.7 | Toast notifications |
+
+**Backend**
+
+| Technology | Details |
+|---|---|
+| PHP | 7.4+ |
+| WordPress REST API | Namespace: `wp-manager-pro/v1` |
+| Authentication | WordPress nonce (`wp_rest`) |
+| Authorization | `manage_options` capability on all routes |
+
+## Feature highlights
+
+<CardGroup cols={2}>
+  <Card title="Plugin & Theme Manager" icon="puzzle-piece" href="/features/plugin-manager">
+    Install, activate, update, and roll back plugins and themes. One-click updates and version history for any WP.org item.
+  </Card>
+  <Card title="File Manager" icon="folder-open" href="/features/file-manager">
+    Full filesystem browser with Monaco Editor, syntax highlighting for PHP, JS, CSS, SQL, and more. Path traversal protection built in.
+  </Card>
+  <Card title="Database Manager" icon="database" href="/features/database-manager">
+    Browse tables, edit rows, run read-only SQL queries, export `.sql` dumps, and run search-and-replace with correct serialized-data handling.
+  </Card>
+  <Card title="Security Suite" icon="shield-check" href="/features/security-overview">
+    Login protection, IP blocklist, TOTP two-factor authentication, core file integrity checks, and a malware scanner covering 8,000 files.
+  </Card>
+  <Card title="Maintenance Mode" icon="triangle-exclamation" href="/features/maintenance-mode">
+    Toggle a custom maintenance page with gradient presets, countdown timer, emoji icon, and a live preview pane.
+  </Card>
+  <Card title="Agency Tools" icon="building" href="/features/agency-tools">
+    White-label login page, mail interceptor with Dev Mode, client report generator, coming soon mode, and admin UI customizer.
+  </Card>
+  <Card title="Developer Utilities" icon="terminal" href="/features/developer-utilities">
+    Hook explorer, built-in REST API tester, dummy data generator, rewrite rules tester, object cache browser, and database prefix changer.
+  </Card>
+  <Card title="Image Tools" icon="image" href="/features/image-tools">
+    WebP and AVIF conversion on upload, batch conversion of existing media, SVG uploads with server-side sanitization.
+  </Card>
+</CardGroup>
+
+<Note>
+  WP Manager Pro requires a WordPress user with the `manage_options` capability (Administrator). Lower-privileged users receive a `403 Forbidden` response from all REST API endpoints.
+</Note>

@@ -1,0 +1,172 @@
+---
+title: 'Snippets'
+description: 'Create, update, toggle, and delete custom PHP, CSS, and JavaScript code snippets executed on your WordPress site.'
+---
+
+<Info>
+  All endpoints require a valid WordPress nonce in the `X-WP-Nonce` header and the `manage_options` capability. Added in v1.4.0.
+</Info>
+
+<Note>
+  Snippets are stored in the `wp_wmp_snippets` database table. PHP snippets execute on the `init` hook; CSS is output to `wp_head`; JS is output to `wp_footer`. Snippets are created disabled by default.
+</Note>
+
+**Base URL:** `{site_url}/wp-json/wp-manager-pro/v1`
+
+---
+
+## GET /snippets
+
+Returns all snippets ordered by ID descending.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/snippets" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="snippets" type="array">
+  <Expandable title="snippet properties">
+    <ResponseField name="id" type="number">Snippet ID.</ResponseField>
+    <ResponseField name="title" type="string">Snippet name.</ResponseField>
+    <ResponseField name="description" type="string">Optional description.</ResponseField>
+    <ResponseField name="code" type="string">The snippet code.</ResponseField>
+    <ResponseField name="type" type="string">`php`, `css`, or `js`.</ResponseField>
+    <ResponseField name="enabled" type="number">`1` if active, `0` if inactive.</ResponseField>
+    <ResponseField name="created_at" type="string">Creation timestamp.</ResponseField>
+    <ResponseField name="updated_at" type="string">Last updated timestamp.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## POST /snippets
+
+Create a new snippet. New snippets are disabled by default.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/snippets" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Disable Emojis", "type": "php", "code": "remove_action(\"init\", \"wp_emoji_loader\");" }'
+```
+
+### Parameters
+
+<ParamField body="title" type="string" required>
+  Display name for the snippet.
+</ParamField>
+
+<ParamField body="code" type="string" required>
+  The snippet code. For PHP snippets, the opening `<?php` tag is stripped automatically before execution.
+</ParamField>
+
+<ParamField body="type" type="string" required default="php">
+  Snippet type. Accepted values: `php`, `css`, `js`.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional description.
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether the snippet was created.
+</ResponseField>
+
+<ResponseField name="snippet" type="object">
+  The newly created snippet object.
+</ResponseField>
+
+---
+
+## PUT /snippets/{id}
+
+Update an existing snippet.
+
+```bash
+curl -X PUT "https://yoursite.com/wp-json/wp-manager-pro/v1/snippets/3" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Disable Emojis (updated)", "code": "remove_action(\"init\", \"wp_emoji_loader\");" }'
+```
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The snippet ID to update.
+</ParamField>
+
+### Body parameters
+
+Accepts the same fields as `POST /snippets`. Fields omitted from the request retain their existing values.
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether the snippet was updated.
+</ResponseField>
+
+<ResponseField name="snippet" type="object">
+  The updated snippet object.
+</ResponseField>
+
+---
+
+## POST /snippets/{id}/toggle
+
+Enable or disable a snippet without modifying its code.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/snippets/3/toggle" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"enabled": true}'
+```
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The snippet ID.
+</ParamField>
+
+### Body parameters
+
+<ParamField body="enabled" type="boolean" required>
+  `true` to enable, `false` to disable.
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether the state was changed.
+</ResponseField>
+
+<ResponseField name="enabled" type="boolean">
+  The new enabled state.
+</ResponseField>
+
+---
+
+## DELETE /snippets/{id}
+
+Permanently delete a snippet.
+
+```bash
+curl -X DELETE "https://yoursite.com/wp-json/wp-manager-pro/v1/snippets/3" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Path parameters
+
+<ParamField path="id" type="number" required>
+  The snippet ID to delete.
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether the snippet was deleted.
+</ResponseField>

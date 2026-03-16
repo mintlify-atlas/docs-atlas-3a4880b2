@@ -1,0 +1,123 @@
+---
+title: 'System'
+description: 'Retrieve a full system information report covering WordPress, PHP, database, server, active plugins, defined constants, and upcoming cron jobs.'
+---
+
+## GET /system
+
+Returns comprehensive environment information useful for debugging, auditing, and support. Covers the WordPress installation, PHP runtime, database connection, web server, currently active plugins, key WordPress constants, and the next 20 scheduled cron events.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/system" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response fields
+
+<ResponseField name="wordpress" type="object" required>
+  WordPress installation details.
+  <Expandable title="properties">
+    <ResponseField name="version" type="string">WordPress version.</ResponseField>
+    <ResponseField name="site_url" type="string">Site URL (`get_site_url()`).</ResponseField>
+    <ResponseField name="home_url" type="string">Home URL (`get_home_url()`).</ResponseField>
+    <ResponseField name="admin_email" type="string">Admin email address.</ResponseField>
+    <ResponseField name="language" type="string">Site locale, e.g. `"en_US"`.</ResponseField>
+    <ResponseField name="timezone" type="string">WordPress timezone string, e.g. `"America/New_York"`.</ResponseField>
+    <ResponseField name="charset" type="string">Blog character set, e.g. `"UTF-8"`.</ResponseField>
+    <ResponseField name="multisite" type="boolean">`true` if WordPress Multisite is enabled.</ResponseField>
+    <ResponseField name="memory_limit" type="string">`WP_MEMORY_LIMIT` constant value.</ResponseField>
+    <ResponseField name="max_memory" type="string">`WP_MAX_MEMORY_LIMIT` constant value, or `"N/A"` if not defined.</ResponseField>
+    <ResponseField name="debug" type="boolean">`true` if `WP_DEBUG` is enabled.</ResponseField>
+    <ResponseField name="debug_log" type="boolean">`true` if `WP_DEBUG_LOG` is enabled.</ResponseField>
+    <ResponseField name="debug_display" type="boolean">`true` if `WP_DEBUG_DISPLAY` is enabled.</ResponseField>
+    <ResponseField name="table_prefix" type="string">Database table prefix, e.g. `"wp_"`.</ResponseField>
+    <ResponseField name="uploads_dir" type="string">Absolute path to the uploads base directory.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="php" type="object" required>
+  PHP runtime information.
+  <Expandable title="properties">
+    <ResponseField name="version" type="string">PHP version string, e.g. `"8.2.18"`.</ResponseField>
+    <ResponseField name="os" type="string">Operating system (`PHP_OS`), e.g. `"Linux"`.</ResponseField>
+    <ResponseField name="sapi" type="string">Server API (`PHP_SAPI`), e.g. `"fpm-fcgi"`.</ResponseField>
+    <ResponseField name="memory_limit" type="string">`memory_limit` ini value.</ResponseField>
+    <ResponseField name="max_exec_time" type="string">`max_execution_time` ini value.</ResponseField>
+    <ResponseField name="upload_max" type="string">`upload_max_filesize` ini value.</ResponseField>
+    <ResponseField name="post_max_size" type="string">`post_max_size` ini value.</ResponseField>
+    <ResponseField name="max_input_vars" type="string">`max_input_vars` ini value.</ResponseField>
+    <ResponseField name="max_input_time" type="string">`max_input_time` ini value.</ResponseField>
+    <ResponseField name="display_errors" type="string">`display_errors` ini value.</ResponseField>
+    <ResponseField name="extensions" type="string[]">Array of all loaded PHP extensions.</ResponseField>
+    <ResponseField name="disabled_funcs" type="string">Comma-separated list of disabled PHP functions.</ResponseField>
+    <ResponseField name="curl" type="boolean">`true` if the cURL extension is available.</ResponseField>
+    <ResponseField name="gd" type="boolean">`true` if the GD extension is loaded.</ResponseField>
+    <ResponseField name="imagick" type="boolean">`true` if the Imagick extension is loaded.</ResponseField>
+    <ResponseField name="mbstring" type="boolean">`true` if the mbstring extension is loaded.</ResponseField>
+    <ResponseField name="openssl" type="boolean">`true` if the OpenSSL extension is loaded.</ResponseField>
+    <ResponseField name="zip" type="boolean">`true` if the Zip extension is loaded.</ResponseField>
+    <ResponseField name="intl" type="boolean">`true` if the Intl extension is loaded.</ResponseField>
+    <ResponseField name="opcache" type="boolean">`true` if Zend OPcache is loaded.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="database" type="object" required>
+  Database connection details.
+  <Expandable title="properties">
+    <ResponseField name="host" type="string">Database host (`DB_HOST`).</ResponseField>
+    <ResponseField name="name" type="string">Database name (`DB_NAME`).</ResponseField>
+    <ResponseField name="user" type="string">Database user (`DB_USER`).</ResponseField>
+    <ResponseField name="charset" type="string">Database charset (`DB_CHARSET`).</ResponseField>
+    <ResponseField name="collate" type="string">Database collation (`DB_COLLATE`).</ResponseField>
+    <ResponseField name="version" type="string">MySQL/MariaDB server version.</ResponseField>
+    <ResponseField name="prefix" type="string">Table prefix.</ResponseField>
+    <ResponseField name="size" type="string">Total database size as a human-readable string, e.g. `"5.47 MB"`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="server" type="object" required>
+  Web server information.
+  <Expandable title="properties">
+    <ResponseField name="software" type="string">Server software string from `SERVER_SOFTWARE`, e.g. `"Apache/2.4.57"`.</ResponseField>
+    <ResponseField name="ip" type="string">Server IP address.</ResponseField>
+    <ResponseField name="port" type="number">Server port number.</ResponseField>
+    <ResponseField name="protocol" type="string">Server protocol, e.g. `"HTTP/1.1"`.</ResponseField>
+    <ResponseField name="https" type="boolean">`true` if the request is over HTTPS.</ResponseField>
+    <ResponseField name="disk_free" type="string">Free disk space as a human-readable string, e.g. `"24.50 GB"`.</ResponseField>
+    <ResponseField name="disk_total" type="string">Total disk space as a human-readable string, e.g. `"50.00 GB"`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="active_plugins" type="object[]" required>
+  List of currently active plugins.
+  <Expandable title="item properties">
+    <ResponseField name="name" type="string">Plugin display name.</ResponseField>
+    <ResponseField name="version" type="string">Plugin version string.</ResponseField>
+    <ResponseField name="file" type="string">Plugin file path relative to the plugins directory, e.g. `"akismet/akismet.php"`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="constants" type="object" required>
+  Key WordPress constants and their current values. Each value is either `"true"`, `"false"`, or `"not defined"`.
+  <Expandable title="keys">
+    <ResponseField name="ABSPATH" type="string">Absolute path to the WordPress installation.</ResponseField>
+    <ResponseField name="WP_CONTENT_DIR" type="string">Absolute path to `wp-content`.</ResponseField>
+    <ResponseField name="WP_PLUGIN_DIR" type="string">Absolute path to the plugins directory.</ResponseField>
+    <ResponseField name="WP_DEBUG" type="string">`"true"`, `"false"`, or `"not defined"`.</ResponseField>
+    <ResponseField name="SAVEQUERIES" type="string">`"true"`, `"false"`, or `"not defined"`.</ResponseField>
+    <ResponseField name="WP_DISABLE_FATAL_ERROR_HANDLER" type="string">`"true"`, `"false"`, or `"not defined"`.</ResponseField>
+    <ResponseField name="FORCE_SSL_ADMIN" type="string">`"true"`, `"false"`, or `"not defined"`.</ResponseField>
+    <ResponseField name="DISALLOW_FILE_EDIT" type="string">`"true"`, `"false"`, or `"not defined"`.</ResponseField>
+    <ResponseField name="DISALLOW_FILE_MODS" type="string">`"true"`, `"false"`, or `"not defined"`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="cron" type="object[]" required>
+  The next 20 scheduled cron events, sorted by timestamp.
+  <Expandable title="item properties">
+    <ResponseField name="hook" type="string">WordPress action hook name for the cron event.</ResponseField>
+    <ResponseField name="schedule" type="string">Recurrence schedule key (e.g. `"hourly"`, `"twicedaily"`) or `"once"` for one-time events.</ResponseField>
+    <ResponseField name="next_run" type="string">Human-readable time until/since the next run, e.g. `"5 minutes ago"`.</ResponseField>
+    <ResponseField name="timestamp" type="number">Unix timestamp of the next scheduled run.</ResponseField>
+  </Expandable>
+</ResponseField>

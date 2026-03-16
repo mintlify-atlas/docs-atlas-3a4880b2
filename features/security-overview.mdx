@@ -1,0 +1,82 @@
+---
+title: 'Security suite overview'
+description: 'Five-tab security suite covering login protection, hardening, file integrity, and two-factor authentication — all from a single screen.'
+icon: 'shield'
+---
+
+The Security suite is accessible from the **WP Manager → Security** menu item. It organises every protection feature into five tabs so you can see your site's security posture at a glance and configure each layer independently.
+
+## Security model
+
+<Info>
+Every REST endpoint in WP Manager Pro requires the `manage_options` capability and a valid `wp_rest` nonce in the `X-WP-Nonce` request header. Users without administrator privileges receive a `403 Forbidden` response.
+</Info>
+
+All user-supplied values are sanitised with WordPress core functions (`sanitize_text_field`, `absint`, `sanitize_hex_color`, `wp_kses_post`) before being written to `wp_options` or user meta.
+
+## Five tabs at a glance
+
+<CardGroup cols={2}>
+  <Card title="Overview" icon="layout-dashboard" href="/features/security-overview">
+    At-a-glance status cards for all six security features with on/off indicators. Shows the current WordPress version and locale with a quick link to the Integrity tab.
+  </Card>
+  <Card title="Login" icon="lock" href="/features/security-login">
+    Move `wp-login.php` to a secret slug, limit failed login attempts per IP, and review or clear the lockout log.
+  </Card>
+  <Card title="Hardening" icon="shield-check" href="/features/security-hardening">
+    Disable XML-RPC, hide the WordPress version string, and maintain a blocklist of individual IPs or CIDR ranges.
+  </Card>
+  <Card title="Integrity" icon="file-search">
+    Fetches official MD5 checksums from `api.wordpress.org` and compares every file in `wp-admin/` and `wp-includes/` against expected hashes. Reports modified and missing files.
+  </Card>
+  <Card title="Two-Factor Auth" icon="smartphone" href="/features/security-2fa">
+    TOTP-based 2FA per admin account — compatible with Google Authenticator, Authy, and any RFC 6238 app. Eight one-time backup codes generated on activation.
+  </Card>
+</CardGroup>
+
+## Overview tab — status cards
+
+When you open the Security page, the **Overview** tab loads immediately and displays six status cards, one for each protection feature:
+
+| Card | On indicator |
+|---|---|
+| Admin URL | Shows the active custom slug (e.g. `/my-secret-login`) |
+| Login Limiter | Shows the maximum attempts configured (e.g. `5 attempts max`) |
+| IP Blocklist | Shows the number of blocked IPs/ranges |
+| XML-RPC | Shows "Disabled" when the `xmlrpc_enabled` filter is active |
+| Hide WP Version | Shows "Version hidden" when version stripping is active |
+| Two-Factor Auth | Shows "TOTP active" when 2FA is enabled for your account |
+
+Each card has a green **On** badge when the feature is active and a neutral **Off** badge when inactive.
+
+The bottom of the Overview tab shows the current WordPress version and locale, and links you to the **Integrity** tab to verify core files against official checksums.
+
+## REST API endpoints
+
+All Security endpoints sit under the `wp-manager-pro/v1` namespace.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/security/overview` | All security feature states in one call |
+| `POST` | `/security/admin-url` | Enable or update the custom login slug |
+| `DELETE` | `/security/admin-url` | Disable admin URL protection |
+| `POST` | `/security/limiter` | Save login limiter settings |
+| `GET` | `/security/lockouts` | List lockout log entries |
+| `DELETE` | `/security/lockouts` | Clear all lockout log entries |
+| `POST` | `/security/lockouts/unlock` | Unlock a specific IP |
+| `GET` | `/security/ip-blocklist` | List blocked IPs |
+| `POST` | `/security/ip-blocklist` | Add an IP or CIDR range |
+| `DELETE` | `/security/ip-blocklist` | Remove an IP from the blocklist |
+| `POST` | `/security/hardening` | Save XML-RPC and hide-version settings |
+| `POST` | `/security/integrity` | Run the core file integrity check |
+| `GET` | `/security/2fa` | Get 2FA status for the current user |
+| `POST` | `/security/2fa/setup` | Generate a TOTP secret and QR URL |
+| `POST` | `/security/2fa/verify` | Verify a code and activate 2FA |
+| `DELETE` | `/security/2fa` | Disable 2FA for the current user |
+
+## Related pages
+
+- [Login protection](/features/security-login) — custom URL and brute-force limiting
+- [Hardening](/features/security-hardening) — XML-RPC, version hiding, IP blocklist
+- [Two-Factor Authentication](/features/security-2fa) — TOTP setup and backup codes
+- [Security Scanner](/features/security-scanner) — malware, CVE, SSL, and core checks

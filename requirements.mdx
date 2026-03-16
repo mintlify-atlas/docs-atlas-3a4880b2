@@ -1,0 +1,73 @@
+---
+title: 'Requirements'
+description: 'System requirements for running WP Manager Pro on your WordPress site.'
+---
+
+## Core requirements
+
+| Requirement | Minimum |
+|---|---|
+| WordPress | 5.9 |
+| PHP | 7.4 |
+| MySQL / MariaDB | 5.6+ |
+| Browser | Modern — ES2020+ (Chrome 80+, Firefox 74+, Safari 13.1+, Edge 80+) |
+
+<Note>
+  WP Manager Pro embeds a full React 19 application. Browsers that do not support ES2020 features (optional chaining, nullish coalescing, `Promise.allSettled`) will not run the interface.
+</Note>
+
+## PHP extensions
+
+The core plugin works with a standard PHP 7.4+ installation. Certain features require additional extensions.
+
+| Extension | Required for | Notes |
+|---|---|---|
+| **GD** | Image Tools — WebP conversion, AVIF uploads, thumbnail regeneration | PHP's most common image library; usually available by default |
+| **ImageMagick** (`imagick`) | Image Tools — alternative to GD for WebP/AVIF | Either GD or ImageMagick is sufficient |
+| **OpenSSL** | Security Scanner — SSL certificate checker | Required for `stream_socket_client` + `openssl_x509_parse` |
+| **ZipArchive** (`zip`) | Plugin/theme export as ZIP; database backup | Required for creating `.zip` exports |
+| **cURL** | WordPress.org plugin/theme search; WPScan vulnerability API | Standard on virtually all hosts |
+| **mbstring** | Multi-byte string handling in Search & Replace | Recommended for non-ASCII content |
+| **Intl** | Locale-aware formatting | Optional |
+| **OPcache** | PHP performance | Optional; detected and reported in System Info |
+
+<Tip>
+  Navigate to **System Info → PHP** inside WP Manager Pro to see which extensions are loaded on your server.
+</Tip>
+
+### AVIF specifics
+
+AVIF support requires **PHP 8.1 or higher** plus one of:
+
+- GD compiled with the `imageavif` function (`--with-avif`)
+- ImageMagick compiled with the AVIF codec
+
+The Image Tools page displays a status card for each format so you can verify what your server supports before enabling a format.
+
+## Server permissions
+
+Certain features write to the filesystem and require the web server user to have write access to specific paths.
+
+| Feature | Paths that need write access |
+|---|---|
+| **File Manager** | Any directory or file you want to edit, rename, or delete inside `ABSPATH` |
+| **Debug Tools** | `wp-config.php` (for toggling debug constants) |
+| **Database Backup** | `wp-content/wmp-backups/` (created automatically on first backup) |
+| **Update Manager** | `wp-content/wmp-backups/updates/` (pre-update backup ZIPs) |
+| **Image Tools — WebP serving** | `wp-content/uploads/.htaccess` (Apache rewrite rules) |
+| **Maintenance Mode** | `wp-content/maintenance.php` |
+
+<Warning>
+  `wp-config.php`, `.htaccess`, and `index.php` are write-protected in the File Manager — they cannot be deleted or renamed, only read and edited through the code editor.
+</Warning>
+
+## Requirements for building from source
+
+If you are compiling the React frontend yourself rather than using the pre-built files in `assets/build/`, you also need:
+
+| Tool | Minimum |
+|---|---|
+| Node.js | 18 |
+| npm | 9 |
+
+See [Building from source](/building-from-source) for full instructions.

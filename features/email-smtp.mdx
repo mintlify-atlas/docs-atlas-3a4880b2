@@ -1,0 +1,98 @@
+---
+title: Email / SMTP
+description: Configure custom SMTP delivery, send test emails, and review the outgoing email log.
+---
+
+Email / SMTP (new in v1.4.0) overrides WordPress's default `wp_mail()` transport with a configurable SMTP connection and maintains a persistent log of every email sent by the site.
+
+## SMTP settings
+
+Enable **Custom SMTP** to activate the settings form. All fields are disabled until SMTP is enabled.
+
+| Field | Description |
+|---|---|
+| SMTP Host | Hostname of your mail server, e.g. `smtp.gmail.com` |
+| Port | Numeric port — typically 587 for TLS or 465 for SSL |
+| Encryption | `TLS` (recommended), `SSL`, or `None` |
+| Username | SMTP authentication username (usually your email address) |
+| Password | SMTP password or app-specific password |
+| From Email | The address that appears in the From header |
+| From Name | The display name that appears in the From header |
+
+Click **Save Settings** to persist the configuration.
+
+## Sending a test email
+
+After saving settings, click **Send Test Email**. A dialog prompts for a recipient address. Click **Send Test** to dispatch a verification message through the configured SMTP connection. Check the **Email Log** tab to confirm the status.
+
+<Tip>
+Send the test email to your own address so you can verify the From name and From email appear correctly in your email client.
+</Tip>
+
+## Email log
+
+The **Email Log** tab records every outgoing email, regardless of whether custom SMTP is enabled.
+
+| Column | Description |
+|---|---|
+| Date | Timestamp of the `wp_mail()` call |
+| To | Recipient email address |
+| Subject | Email subject line |
+| Status | **Sent** (green) or **Failed** (red) |
+
+Failed entries include the error message returned by the SMTP server or PHP mailer. Hover over a **Failed** badge to read the error inline.
+
+Click **Clear Log** to remove all entries. The log is paginated at 50 entries per page.
+
+## Provider configuration examples
+
+<AccordionGroup>
+  <Accordion title="Gmail">
+    Google requires an **App Password** when 2-Step Verification is enabled on the account. Regular Gmail passwords do not work with third-party SMTP clients.
+
+    | Field | Value |
+    |---|---|
+    | SMTP Host | `smtp.gmail.com` |
+    | Port | `587` |
+    | Encryption | `TLS` |
+    | Username | `you@gmail.com` |
+    | Password | 16-character App Password from [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) |
+    | From Email | `you@gmail.com` |
+
+    <Note>
+    Gmail free accounts have a daily sending limit of 500 emails. For transactional email at scale, use SendGrid or Mailgun instead.
+    </Note>
+  </Accordion>
+
+  <Accordion title="SendGrid">
+    Use your SendGrid API key as the SMTP password and the literal string `apikey` as the username.
+
+    | Field | Value |
+    |---|---|
+    | SMTP Host | `smtp.sendgrid.net` |
+    | Port | `587` |
+    | Encryption | `TLS` |
+    | Username | `apikey` |
+    | Password | Your SendGrid API key |
+    | From Email | A verified sender identity in your SendGrid account |
+
+    Generate an API key at **SendGrid → Settings → API Keys** with the `Mail Send` permission.
+  </Accordion>
+
+  <Accordion title="Mailgun">
+    Mailgun SMTP credentials are found under **Sending → Domains → SMTP credentials** in the Mailgun dashboard.
+
+    | Field | Value |
+    |---|---|
+    | SMTP Host | `smtp.mailgun.org` |
+    | Port | `587` |
+    | Encryption | `TLS` |
+    | Username | `postmaster@mg.yourdomain.com` |
+    | Password | The SMTP password shown in Mailgun |
+    | From Email | Any address `@mg.yourdomain.com` or a verified domain |
+
+    <Note>
+    Mailgun's US region uses `smtp.mailgun.org`. EU region customers should use `smtp.eu.mailgun.org` and port `587`.
+    </Note>
+  </Accordion>
+</AccordionGroup>

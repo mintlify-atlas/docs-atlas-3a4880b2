@@ -1,0 +1,240 @@
+---
+title: 'Security Scanner'
+description: 'Proactive threat detection with a unified security score, malware pattern matching, CVE vulnerability checks, SSL certificate monitoring, and WordPress/PHP version checks.'
+icon: 'scan-line'
+---
+
+The **Security Scanner** is a dedicated page (accessible under the System group in the sidebar) that provides four independent scans and aggregates the results into a single security score. It was introduced in v2.7.0.
+
+<Info>
+Scans are not run automatically on page load. Click **Run All Scans** to trigger every check at once, or run individual scans from each tab.
+</Info>
+
+## Security score
+
+The Overview tab displays an animated ring showing a score from **0 to 100** and a letter grade:
+
+| Score | Grade |
+|---|---|
+| 100 | A+ |
+| 90–99 | A |
+| 80–89 | B |
+| 70–79 | C |
+| 50–69 | D |
+| 0–49 | F |
+
+The score starts at 100 and deductions are applied based on completed scan results:
+
+| Finding | Deduction |
+|---|---|
+| Each critical malware finding | −20 |
+| Each warning malware finding | −5 |
+| Critical CVE vulnerability | −15 |
+| High CVE vulnerability | −10 |
+| Medium CVE vulnerability | −5 |
+| Low/other CVE vulnerability | −2 |
+| No HTTPS | −20 |
+| Invalid/expired SSL certificate | −20 |
+| SSL expiring within 14 days | −10 |
+| SSL expiring within 30 days | −5 |
+| WordPress not up to date | −10 |
+| PHP end-of-life | −15 |
+| PHP EOL within 90 days | −5 |
+
+Only completed scans contribute to the score. If you run only the SSL check, the score reflects SSL status only.
+
+## Overview tab
+
+The Overview tab shows:
+- The **security score ring** in a card on the left
+- **Four summary cards** on the right, one per scan area (Malware, Vulnerabilities, SSL, Core & PHP)
+
+Each summary card is clickable and acts as a shortcut to trigger that individual scan without leaving the Overview tab. The cards show a dashed border with a prompt when a scan has not yet been run, a spinner while the scan is in progress, and a colour-coded result summary once complete.
+
+The **Run All Scans** button in the page header triggers all four scans simultaneously.
+
+---
+
+## Malware scanner
+
+The Malware Scanner tab recursively walks the `plugins` and `themes` directories, inspecting PHP, JS, and HTML files for 13 known-malicious code patterns.
+
+### Scope selector
+
+Before scanning you can choose the scope:
+
+| Scope | Directories scanned |
+|---|---|
+| All (plugins + themes) | `WP_PLUGIN_DIR` and `get_theme_root()` |
+| Plugins only | `WP_PLUGIN_DIR` |
+| Themes only | `get_theme_root()` |
+
+### File limits
+
+- Up to **8,000 files** are inspected per scan. The scan stops when this limit is reached.
+- Files larger than **512 KB** are skipped automatically to avoid PHP memory exhaustion.
+- Only `.php`, `.js`, and `.html` extensions are inspected.
+
+### Detection patterns
+
+The scanner checks each file against 13 regular expressions:
+
+<AccordionGroup>
+  <Accordion title="Critical patterns">
+    | Pattern ID | Description | Example match |
+    |---|---|---|
+    | `eval_base64` | `eval(base64_decode(…))` | Common obfuscation technique |
+    | `eval_gzip` | `eval(gzinflate/gzuncompress/gzdecode(…))` | Compressed payload execution |
+    | `eval_rot13` | `eval(str_rot13(…))` | ROT13-obfuscated code execution |
+    | `preg_replace_e` | `preg_replace` with `/e` modifier | Code execution via regex |
+    | `assert_request` | `assert()` with `$_POST`/`$_GET`/`$_REQUEST`/`$_COOKIE` | Direct user-input execution |
+    | `system_request` | `system()`/`exec()`/`passthru()` with user input | OS command injection |
+    | `shell_exec_request` | `shell_exec()` with user input | Shell command injection |
+    | `webshell_marker` | Known webshell names: `FilesMan`, `WSO Shell`, `r57shell`, `c99shell`, `b374k` | Known backdoor signatures |
+  </Accordion>
+  <Accordion title="Warning patterns">
+    | Pattern ID | Description |
+    |---|---|
+    | `create_function` | `create_function()` — deprecated and commonly abused for obfuscation |
+    | `base64_decode_long` | `base64_decode()` with a string argument longer than 500 characters |
+    | `variable_function_call` | Dynamic variable function call `$x($y)` where `$y` is user input |
+    | `js_unescape` | `document.write(unescape(…))` — classic JavaScript injection pattern |
+    | `hex_encoded_string` | `eval()` with a long hex-encoded string (20+ `\xHH` sequences) |
+  </Accordion>
+</AccordionGroup>
+
+### Reading findings
+
+Each finding shows:
+- **Severity badge** — Critical (red) or Warning (yellow)
+- **File path** — relative to `wp-content/`
+- **Pattern description** — human-readable label for the matched pattern
+- **Line number** — approximate line in the file where the pattern matched
+- **Code snippet** — first 200 characters of the matched line
+
+<Note>
+A positive finding does not always mean a file is malicious. Some legitimate plugins use `base64_decode` for non-malicious purposes. Review each finding in context before taking action.
+</Note>
+
+---
+
+## Vulnerabilities tab
+
+The Vulnerabilities tab checks every installed plugin and theme against the [WPScan CVE database](https://wpscan.com) via their REST API.
+
+### API key setup
+
+The WPScan API requires a free API key (up to **25 requests per day** on the free tier).
+
+<Steps>
+  <Step title="Register for a free WPScan API key">
+    Visit `wpscan.com/register` and create a free account to obtain your API token.
+  </Step>
+  <Step title="Open the Vulnerabilities tab">
+    Navigate to **Security Scanner → Vulnerabilities**.
+  </Step>
+  <Step title="Paste your API token">
+    Paste the token into the **WPScan API Key** field. Click the eye icon to toggle visibility.
+  </Step>
+  <Step title="Click Save">
+    Click **Save**. The key is stored in `wp_options` as `wmp_wpscan_api_key`. The UI displays the last 4 characters masked (e.g. `****abcd`) to confirm it is configured without exposing the full value.
+  </Step>
+</Steps>
+
+### Vulnerability results
+
+Click **Check Now** to query the WPScan API for every installed plugin and theme. Results are sorted so items with vulnerabilities appear first.
+
+Each row shows:
+- Plugin or theme name and type badge
+- Installed version
+- CVE count badge (green **Clean** if none, red with count if any)
+
+Expand a row to see each CVE's details:
+- **Severity badge** (Critical / High / Medium / Low)
+- **Title** — CVE description
+- **Type** — vulnerability class (e.g. `XSS`, `SQLi`)
+- **CVSS score**
+- **Fixed in** — the version that resolved the issue, if known
+- **Reference links** — CVE detail page on NVD and any additional URLs
+
+<Tip>
+Only vulnerabilities that affect your installed version are shown. If a vulnerability is fixed in a version newer than yours, it will be flagged. Update the plugin or theme to the fixed version to resolve it.
+</Tip>
+
+---
+
+## SSL & Core tab
+
+The SSL & Core tab has two side-by-side cards.
+
+### SSL certificate check
+
+The SSL check uses PHP `stream_socket_client` to open a raw TLS connection to port 443 of your site's hostname, then reads the presented certificate using `openssl_x509_parse`.
+
+The result shows:
+
+| Field | Description |
+|---|---|
+| Status | Valid (green), expiring soon (yellow), or invalid/expired (red) |
+| Days remaining | Integer days until the certificate expires |
+| Host | Hostname checked |
+| Subject | Certificate CN |
+| Issuer | Certificate authority name |
+| Valid From / Valid To | Certificate validity window |
+| SAN | Subject Alternative Names (comma-separated) |
+
+**Alert thresholds:**
+- Certificate valid with > 30 days remaining — green
+- Certificate valid with ≤ 30 days remaining — amber (−5 score)
+- Certificate valid with ≤ 14 days remaining — red (−10 score)
+- Certificate invalid or expired — red (−20 score)
+- Site not using HTTPS — red (−20 score)
+
+### Core & PHP versions
+
+The core check makes two requests:
+
+1. `https://api.wordpress.org/core/version-check/1.7/` — to retrieve the latest available WordPress version
+2. A built-in PHP EOL date table — to determine whether the server's PHP version is end-of-life
+
+**WordPress status:**
+- Green if your installed version matches the latest
+- Yellow if an update is available, with the target version shown
+
+**PHP status:**
+
+| PHP minor | EOL date |
+|---|---|
+| 5.6 | 2018-12-31 |
+| 7.0 | 2019-12-03 |
+| 7.1 | 2019-12-01 |
+| 7.2 | 2020-11-30 |
+| 7.3 | 2021-12-06 |
+| 7.4 | 2022-11-28 |
+| 8.0 | 2023-11-26 |
+| 8.1 | 2024-11-25 |
+| 8.2 | 2026-12-31 |
+| 8.3 | 2027-12-31 |
+| 8.4 | 2028-12-31 |
+
+- Green if the PHP version is actively maintained
+- Yellow if EOL is within 90 days (−5 score)
+- Red if the version is already past EOL (−15 score)
+
+The card also shows the MySQL/MariaDB version for reference.
+
+---
+
+## REST API endpoints
+
+All Scanner endpoints use the `wp-manager-pro/v1` namespace.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/scanner/malware` | Scan files for malicious patterns. Accepts `?scope=all\|plugins\|themes` |
+| `GET` | `/scanner/vulns` | Check plugins and themes against the WPScan CVE API |
+| `GET` | `/scanner/ssl` | Check the SSL certificate for the site domain |
+| `GET` | `/scanner/core` | Check WordPress and PHP version status |
+| `GET` | `/scanner/api-key` | Get WPScan API key configuration status (masked) |
+| `POST` | `/scanner/api-key` | Save or clear the WPScan API key |

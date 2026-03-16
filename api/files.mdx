@@ -1,0 +1,221 @@
+---
+title: 'Files'
+description: 'Browse the filesystem, read and write file contents, upload files, create directories, rename, and delete files through the REST API.'
+---
+
+<Warning>
+All file paths are validated against `ABSPATH` using `realpath()`. Any path that resolves outside of the WordPress root is rejected with `403`. The files `wp-config.php`, `.htaccess`, and `index.php` are protected from deletion and rename.
+</Warning>
+
+---
+
+## GET /files
+
+Lists the contents of a directory. Defaults to `ABSPATH` if no path is provided. Directories are returned before files; entries are sorted alphabetically within each group.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/files?path=/var/www/html/wp-content/plugins" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Request parameters
+
+<ParamField query="path" type="string" default="ABSPATH">
+  Absolute filesystem path to the directory to list. Must resolve inside `ABSPATH`.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="path" type="string">Resolved absolute path of the listed directory.</ResponseField>
+
+<ResponseField name="items" type="object[]">
+  Directory contents.
+  <Expandable title="item properties">
+    <ResponseField name="name" type="string">File or directory name.</ResponseField>
+    <ResponseField name="path" type="string">Absolute path.</ResponseField>
+    <ResponseField name="type" type="string">`"file"` or `"directory"`.</ResponseField>
+    <ResponseField name="size" type="number | null">File size in bytes, or `null` for directories.</ResponseField>
+    <ResponseField name="modified" type="number">Last modified time as a Unix timestamp.</ResponseField>
+    <ResponseField name="writable" type="boolean">`true` if the file or directory is writable by the web server.</ResponseField>
+    <ResponseField name="ext" type="string | null">Lowercase file extension (e.g. `"php"`), or `null` for directories.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="breadcrumbs" type="object[]">
+  Navigation breadcrumbs from the root to the current path.
+  <Expandable title="item properties">
+    <ResponseField name="name" type="string">Display name (e.g. `"Root"` or the directory name).</ResponseField>
+    <ResponseField name="path" type="string">Absolute path for this breadcrumb segment.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="writable" type="boolean">Whether the listed directory itself is writable.</ResponseField>
+
+---
+
+## GET /files/read
+
+Reads the content of a text file. Limited to text-based file types and files up to 2 MB.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/files/read?path=/var/www/html/.htaccess" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Request parameters
+
+<ParamField query="path" type="string" required>
+  Absolute path to the file to read.
+</ParamField>
+
+### Allowed file types
+
+Only the following extensions can be read: `php`, `js`, `jsx`, `ts`, `tsx`, `css`, `scss`, `less`, `html`, `htm`, `json`, `xml`, `txt`, `md`, `yml`, `yaml`, `env`, `htaccess`, `conf`, `config`, `ini`, `log`, `svg`, `twig`, `blade`.
+
+### Response fields
+
+<ResponseField name="path" type="string">Resolved absolute path of the file.</ResponseField>
+<ResponseField name="name" type="string">Filename.</ResponseField>
+<ResponseField name="content" type="string">Full file content as a string.</ResponseField>
+<ResponseField name="ext" type="string">File extension.</ResponseField>
+<ResponseField name="size" type="number">File size in bytes.</ResponseField>
+<ResponseField name="modified" type="number">Last modified time as a Unix timestamp.</ResponseField>
+<ResponseField name="writable" type="boolean">Whether the file is writable.</ResponseField>
+
+---
+
+## POST /files/write
+
+Writes new content to an existing file. The file must be writable by the web server process.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/files/write" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"path": "/var/www/html/.htaccess", "content": "# Options -Indexes"}'
+```
+
+### Request parameters
+
+<ParamField body="path" type="string" required>
+  Absolute path to the file to write.
+</ParamField>
+
+<ParamField body="content" type="string" required>
+  New content to write to the file.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="success" type="boolean">`true` on success.</ResponseField>
+<ResponseField name="message" type="string">Status message.</ResponseField>
+<ResponseField name="bytes" type="number">Number of bytes written.</ResponseField>
+
+---
+
+## DELETE /files/delete
+
+Deletes a file or recursively deletes a directory. Protected files (`wp-config.php`, `.htaccess`, `index.php`) cannot be deleted.
+
+```bash
+curl -X DELETE "https://yoursite.com/wp-json/wp-manager-pro/v1/files/delete" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"path": "/var/www/html/wp-content/uploads/old-file.txt"}'
+```
+
+### Request parameters
+
+<ParamField body="path" type="string" required>
+  Absolute path to the file or directory to delete.
+</ParamField>
+
+<Warning>
+Directory deletion is recursive. All contents are permanently removed without confirmation.
+</Warning>
+
+---
+
+## POST /files/mkdir
+
+Creates a new directory. The parent directory must already exist and must resolve within `ABSPATH`.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/files/mkdir" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"path": "/var/www/html/wp-content/my-new-folder"}'
+```
+
+### Request parameters
+
+<ParamField body="path" type="string" required>
+  Full absolute path of the directory to create. The parent must exist. The final path component is used as the new directory name.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="success" type="boolean">`true` on success.</ResponseField>
+<ResponseField name="message" type="string">Status message.</ResponseField>
+<ResponseField name="path" type="string">Absolute path of the newly created directory.</ResponseField>
+
+---
+
+## POST /files/upload
+
+Uploads a file to a target directory on the server. The filename is sanitized with `sanitize_file_name()` before saving.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/files/upload" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -F "path=/var/www/html/wp-content/uploads" \
+  -F "file=@/local/path/to/file.txt"
+```
+
+### Request parameters
+
+<ParamField body="path" type="string" required>
+  Absolute path to the target directory (must exist and be writable).
+</ParamField>
+
+<ParamField body="file" type="file" required>
+  The file to upload (multipart/form-data).
+</ParamField>
+
+### Response fields
+
+<ResponseField name="success" type="boolean">`true` on success.</ResponseField>
+<ResponseField name="name" type="string">Sanitized filename as saved on the server.</ResponseField>
+<ResponseField name="path" type="string">Absolute path to the uploaded file.</ResponseField>
+<ResponseField name="size" type="number">Size of the saved file in bytes.</ResponseField>
+<ResponseField name="message" type="string">Status message.</ResponseField>
+
+---
+
+## POST /files/rename
+
+Renames a file or directory in-place. The new name must not contain path separators. Protected files (`wp-config.php`, `.htaccess`, `index.php`) cannot be renamed.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/files/rename" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"path": "/var/www/html/wp-content/old-name.txt", "name": "new-name.txt"}'
+```
+
+### Request parameters
+
+<ParamField body="path" type="string" required>
+  Absolute path to the existing file or directory.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  New name for the file or directory. Must not contain `/` or `\`. Sanitized with `sanitize_file_name()`.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="success" type="boolean">`true` on success.</ResponseField>
+<ResponseField name="message" type="string">Status message.</ResponseField>
+<ResponseField name="new_path" type="string">Absolute path after the rename.</ResponseField>
+<ResponseField name="name" type="string">The sanitized new name that was applied.</ResponseField>

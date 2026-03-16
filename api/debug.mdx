@@ -1,0 +1,200 @@
+---
+title: 'Debug'
+description: 'Read and toggle WordPress debug constants in wp-config.php, and manage the error log.'
+---
+
+<Warning>
+  Enabling `WP_DEBUG` or `WP_DEBUG_DISPLAY` on a live production site exposes error details to visitors. Use these endpoints only in development or staging environments.
+</Warning>
+
+<Info>
+  All endpoints require a valid WordPress nonce in the `X-WP-Nonce` header and the `manage_options` capability.
+</Info>
+
+**Base URL:** `{site_url}/wp-json/wp-manager-pro/v1`
+
+---
+
+## GET /debug
+
+Returns the current state of debug-related PHP constants and log file metadata.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/debug" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="wp_debug" type="boolean">
+  Current value of the `WP_DEBUG` constant.
+</ResponseField>
+
+<ResponseField name="wp_debug_log" type="boolean">
+  Current value of `WP_DEBUG_LOG`.
+</ResponseField>
+
+<ResponseField name="wp_debug_display" type="boolean">
+  Current value of `WP_DEBUG_DISPLAY`.
+</ResponseField>
+
+<ResponseField name="savequeries" type="boolean">
+  Current value of `SAVEQUERIES`.
+</ResponseField>
+
+<ResponseField name="script_debug" type="boolean">
+  Current value of `SCRIPT_DEBUG`.
+</ResponseField>
+
+<ResponseField name="log_file" type="string">
+  Resolved path to the error log file.
+</ResponseField>
+
+<ResponseField name="log_exists" type="boolean">
+  Whether the log file exists on disk.
+</ResponseField>
+
+<ResponseField name="log_size" type="number">
+  Size of the log file in bytes.
+</ResponseField>
+
+<ResponseField name="config_writable" type="boolean">
+  Whether `wp-config.php` is writable by the web process.
+</ResponseField>
+
+---
+
+## POST /debug/toggle
+
+Update debug constants in `wp-config.php`. Only constants explicitly passed in the request body are modified; omitted constants are left unchanged.
+
+<Warning>
+  This endpoint directly rewrites `wp-config.php`. Ensure the file is writable and you have a backup before making changes.
+</Warning>
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/debug/toggle" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"wp_debug": true, "wp_debug_log": true, "wp_debug_display": false}'
+```
+
+### Parameters
+
+<ParamField body="wp_debug" type="boolean">
+  Set the `WP_DEBUG` constant.
+</ParamField>
+
+<ParamField body="wp_debug_log" type="boolean">
+  Set the `WP_DEBUG_LOG` constant. Enables logging to `wp-content/debug.log`.
+</ParamField>
+
+<ParamField body="wp_debug_display" type="boolean">
+  Set the `WP_DEBUG_DISPLAY` constant. Controls whether errors are shown in the browser.
+</ParamField>
+
+<ParamField body="savequeries" type="boolean">
+  Set the `SAVEQUERIES` constant. Stores all database queries for inspection.
+</ParamField>
+
+<ParamField body="script_debug" type="boolean">
+  Set the `SCRIPT_DEBUG` constant. Forces WordPress to use non-minified scripts and styles.
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether the update succeeded.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="wp_debug" type="boolean">
+  The saved value of `WP_DEBUG`.
+</ResponseField>
+
+<ResponseField name="wp_debug_log" type="boolean">
+  The saved value of `WP_DEBUG_LOG`.
+</ResponseField>
+
+<ResponseField name="wp_debug_display" type="boolean">
+  The saved value of `WP_DEBUG_DISPLAY`.
+</ResponseField>
+
+<ResponseField name="savequeries" type="boolean">
+  The saved value of `SAVEQUERIES`.
+</ResponseField>
+
+<ResponseField name="script_debug" type="boolean">
+  The saved value of `SCRIPT_DEBUG`.
+</ResponseField>
+
+---
+
+## GET /debug/log
+
+Read the last N lines from the error log. Auto-detects `wp-content/debug.log` or the PHP `error_log` path.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/debug/log?lines=100&level=error" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Parameters
+
+<ParamField query="lines" type="number" default="200">
+  Number of lines to return from the tail of the log file.
+</ParamField>
+
+<ParamField query="level" type="string">
+  Filter by log level. Accepted values: `error`, `warning`, `notice`, `deprecated`. Omit to return all lines.
+</ParamField>
+
+### Response
+
+<ResponseField name="exists" type="boolean">
+  Whether the log file was found on disk.
+</ResponseField>
+
+<ResponseField name="content" type="string">
+  The log content (last N lines, optionally filtered).
+</ResponseField>
+
+<ResponseField name="size" type="number">
+  Total log file size in bytes.
+</ResponseField>
+
+<ResponseField name="path" type="string">
+  Resolved path to the log file.
+</ResponseField>
+
+<ResponseField name="lines" type="number">
+  The number of lines requested.
+</ResponseField>
+
+<ResponseField name="level" type="string">
+  The level filter applied, if any.
+</ResponseField>
+
+---
+
+## DELETE /debug/log/clear
+
+Truncate the error log file to zero bytes.
+
+```bash
+curl -X DELETE "https://yoursite.com/wp-json/wp-manager-pro/v1/debug/log/clear" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether the log was cleared.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>

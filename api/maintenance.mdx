@@ -1,0 +1,207 @@
+---
+title: 'Maintenance'
+description: 'Control maintenance mode and customize the maintenance page appearance.'
+---
+
+<Info>
+  All endpoints require a valid WordPress nonce in the `X-WP-Nonce` header and the `manage_options` capability.
+</Info>
+
+**Base URL:** `{site_url}/wp-json/wp-manager-pro/v1`
+
+---
+
+## GET /maintenance
+
+Returns the current maintenance mode status and all appearance settings.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/maintenance" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="active" type="boolean">
+  Whether maintenance mode is currently enabled.
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The page heading shown to visitors.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  The message body shown to visitors.
+</ResponseField>
+
+<ResponseField name="bg_start" type="string">
+  Background gradient start color (hex).
+</ResponseField>
+
+<ResponseField name="bg_end" type="string">
+  Background gradient end color (hex).
+</ResponseField>
+
+<ResponseField name="accent" type="string">
+  Accent/divider color (hex).
+</ResponseField>
+
+<ResponseField name="text_color" type="string">
+  Text color (hex).
+</ResponseField>
+
+<ResponseField name="logo" type="string">
+  Emoji icon or custom text displayed at the top of the page.
+</ResponseField>
+
+<ResponseField name="badge_text" type="string">
+  Text shown in the status badge.
+</ResponseField>
+
+<ResponseField name="show_badge" type="boolean">
+  Whether the status badge is visible.
+</ResponseField>
+
+<ResponseField name="show_countdown" type="boolean">
+  Whether the countdown timer is shown.
+</ResponseField>
+
+<ResponseField name="end_time" type="string">
+  Countdown target date/time string.
+</ResponseField>
+
+<ResponseField name="bypass_roles" type="array">
+  Role slugs allowed to bypass maintenance mode.
+</ResponseField>
+
+<ResponseField name="available_roles" type="object">
+  Map of role slug to display name (excludes `administrator`, which always bypasses maintenance).
+</ResponseField>
+
+<ResponseField name="bypass_key" type="string">
+  Secret URL key granting visitor access via `?wmp_preview=KEY`.
+</ResponseField>
+
+<ResponseField name="scope" type="string">
+  Maintenance scope: `all`, `home`, or `paths`.
+</ResponseField>
+
+<ResponseField name="scope_paths" type="string">
+  Newline-separated URL path patterns when `scope` is `paths`.
+</ResponseField>
+
+<ResponseField name="home_url" type="string">
+  The site home URL.
+</ResponseField>
+
+---
+
+## POST /maintenance/toggle
+
+Toggle maintenance mode on or off. Any appearance settings sent in the same request are also saved.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/maintenance/toggle" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"enable": true, "title": "We will be right back", "message": "Scheduled maintenance in progress."}'
+```
+
+### Parameters
+
+<ParamField body="enable" type="boolean" required>
+  `true` to enable maintenance mode, `false` to disable.
+</ParamField>
+
+<ParamField body="title" type="string">
+  Page heading. Saved to `wmp_maintenance_title`.
+</ParamField>
+
+<ParamField body="message" type="string">
+  Page body text. Saved to `wmp_maintenance_message`.
+</ParamField>
+
+<ParamField body="bg_start" type="string">
+  Gradient start color (hex, e.g. `#1e1e2e`).
+</ParamField>
+
+<ParamField body="bg_end" type="string">
+  Gradient end color (hex).
+</ParamField>
+
+<ParamField body="accent" type="string">
+  Accent/divider color (hex).
+</ParamField>
+
+<ParamField body="text_color" type="string">
+  Text color (hex).
+</ParamField>
+
+<ParamField body="logo" type="string">
+  Emoji icon or text for the top of the page.
+</ParamField>
+
+<ParamField body="badge_text" type="string">
+  Status badge text.
+</ParamField>
+
+<ParamField body="show_badge" type="boolean">
+  Show or hide the status badge.
+</ParamField>
+
+<ParamField body="show_countdown" type="boolean">
+  Show or hide the countdown timer.
+</ParamField>
+
+<ParamField body="end_time" type="string">
+  Countdown target date/time (any format parseable by PHP `strtotime`).
+</ParamField>
+
+<ParamField body="bypass_roles" type="array">
+  Array of role slugs that bypass maintenance (e.g. `["editor", "shop_manager"]`).
+</ParamField>
+
+<ParamField body="bypass_key" type="string">
+  Override the secret bypass key.
+</ParamField>
+
+<ParamField body="scope" type="string" default="all">
+  Which pages show maintenance: `all`, `home`, or `paths`.
+</ParamField>
+
+<ParamField body="scope_paths" type="string">
+  Newline-separated URL path patterns (only used when `scope` is `paths`).
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether the operation succeeded.
+</ResponseField>
+
+<ResponseField name="active" type="boolean">
+  The new maintenance mode state.
+</ResponseField>
+
+---
+
+## POST /maintenance/settings
+
+Save appearance settings without changing the active/inactive state. Accepts the same body parameters as `/maintenance/toggle` except `enable`.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/maintenance/settings" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Back soon", "bg_start": "#0f0f1a", "bg_end": "#1a0f3c", "accent": "#6d28d9"}'
+```
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether settings were saved.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>

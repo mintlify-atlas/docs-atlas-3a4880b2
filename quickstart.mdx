@@ -1,80 +1,122 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get from installation to your first managed action in under 5 minutes.
 ---
 
-## Get started in three steps
-
-Get your documentation site running locally and make your first customization.
-
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+This guide walks you through installing WP Manager Pro, navigating the dashboard, and completing your first key actions — a plugin update, enabling maintenance mode, and running a security check.
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  You need administrator access to your WordPress site. WP Manager Pro requires the `manage_options` capability.
 </Note>
+
+## Step 1 — Install and activate
+
+<Steps>
+  <Step title="Download the plugin">
+    Download `wp-manager-pro-v2.9.2.zip` from the [GitHub Releases page](https://github.com/nurkamol/wp-manager-pro/releases).
+  </Step>
+  <Step title="Upload to WordPress">
+    In your WordPress admin, go to **Plugins → Add New → Upload Plugin**. Select the ZIP file and click **Install Now**.
+  </Step>
+  <Step title="Activate">
+    Click **Activate Plugin** after installation completes.
+  </Step>
+  <Step title="Open the dashboard">
+    Click **WP Manager** in the WordPress admin sidebar, or click the **Open** link in the plugin row on the Plugins list page.
+  </Step>
+</Steps>
+
+You should now see the WP Manager Pro dashboard with site health stats.
+
+## Step 2 — Tour the dashboard
+
+The dashboard gives you an instant snapshot of your site's health:
+
+| Section | What you see |
+|---------|-------------|
+| **Site counts** | Active plugins, themes, and users |
+| **Update alerts** | Pending core, plugin, and theme updates |
+| **PHP info** | Memory limit, max execution time, upload limit |
+| **Database** | Size in MB and table count |
+| **Disk** | Uploads folder size and available disk space |
+| **Recent posts** | Last 5 published posts with status |
+
+<Tip>
+  If you see update alerts on the dashboard, your next step is to review and apply those updates in the Plugin Manager or Theme Manager.
+</Tip>
+
+## Step 3 — Update a plugin
+
+<Steps>
+  <Step title="Open Plugin Manager">
+    Click **Plugins** in the WP Manager sidebar.
+  </Step>
+  <Step title="Check for updates">
+    Click **Check Updates** (top right) to force WordPress to re-query WordPress.org for fresh update data.
+  </Step>
+  <Step title="Update a plugin">
+    Click the **Update** button on any plugin showing a pending update. The plugin updates in-place and the row refreshes with the new version number.
+  </Step>
+</Steps>
+
+<Info>
+  You can also install specific older versions using the **Version History** dialog (clock icon on any plugin row). This lets you roll back to any version available on WordPress.org.
+</Info>
+
+## Step 4 — Enable maintenance mode
+
+<Steps>
+  <Step title="Open Maintenance">
+    Click **Maintenance** in the WP Manager sidebar.
+  </Step>
+  <Step title="Set your message">
+    On the **Content** tab, enter a title (e.g. "We'll be right back") and a message for your visitors.
+  </Step>
+  <Step title="Choose an appearance">
+    Switch to the **Appearance** tab. Select one of the 6 gradient presets — Midnight, Sunset, Forest, Royal, Slate, or Candy. The live preview pane updates in real time.
+  </Step>
+  <Step title="Enable maintenance mode">
+    Click **Enable Maintenance** at the top of the page. Your site now shows the maintenance page to all non-admin visitors.
+  </Step>
+  <Step title="Disable when done">
+    Return to **Maintenance** and click **Disable Maintenance** to restore normal site access.
+  </Step>
+</Steps>
+
+<Warning>
+  Maintenance mode serves a `503 Service Unavailable` HTTP response, which signals to search engines that the outage is temporary. Leaving it enabled for long periods may affect SEO.
+</Warning>
+
+## Step 5 — Run a security check
+
+<Steps>
+  <Step title="Open Security">
+    Click **Security** in the WP Manager sidebar.
+  </Step>
+  <Step title="Review the overview">
+    The **Overview** tab shows status cards for all security features — Admin URL Protection, Login Limiter, IP Blocklist, Core Integrity, and Two-Factor Auth. Green indicators mean the feature is active.
+  </Step>
+  <Step title="Run the Security Scanner">
+    Click **Security Scanner** in the sidebar (under the System group). Click **Run All Scans** to trigger malware detection, vulnerability checking, SSL validation, and core integrity verification simultaneously.
+  </Step>
+  <Step title="Review the security score">
+    The animated score ring (0–100) grades your overall security posture from A+ to F. Expand each scan result to review findings and recommendations.
+  </Step>
+</Steps>
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="Plugin Manager" icon="puzzle-piece" href="/features/plugin-manager">
+    Full plugin lifecycle management: install, update, version history, and ZIP export.
+  </Card>
+  <Card title="Security Suite" icon="shield-check" href="/features/security-overview">
+    Set up 2FA, admin URL protection, and login attempt limiting.
+  </Card>
+  <Card title="File Manager" icon="folder-open" href="/features/file-manager">
+    Browse and edit site files with Monaco Editor syntax highlighting.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Automate WordPress management through the REST API.
+  </Card>
+</CardGroup>

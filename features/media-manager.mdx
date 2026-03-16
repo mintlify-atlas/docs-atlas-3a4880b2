@@ -1,0 +1,132 @@
+---
+title: 'Media Manager'
+description: 'Clean up your WordPress media library by finding and removing orphaned files, unused attachments, and duplicates, and re-compress JPEG and PNG images.'
+---
+
+Media Manager provides a five-tab interface for auditing and cleaning your WordPress media library. All destructive operations use `wp_delete_attachment()` to ensure proper cleanup of database records, file metadata, and generated thumbnail sizes.
+
+Navigate to **WP Manager → Media Manager**.
+
+## Overview tab
+
+The Overview tab shows a summary of your media library health before you take any action.
+
+### Stats cards
+
+<CardGroup cols={3}>
+  <Card title="Total Attachments" icon="images">
+    The total number of attachment posts in the database.
+  </Card>
+  <Card title="Uploads Size" icon="hard-drive">
+    The total size of the `wp-content/uploads/` directory on disk.
+  </Card>
+  <Card title="Orphaned" icon="triangle-alert">
+    Attachments whose physical file is missing from disk.
+  </Card>
+  <Card title="Unused" icon="file-image">
+    Attachments not used as featured images and not referenced in any published post content.
+  </Card>
+  <Card title="Duplicate Groups" icon="layers">
+    Number of groups where two or more files share the same MD5 hash.
+  </Card>
+</CardGroup>
+
+Click **Refresh** to re-scan and update all counts.
+
+### What each section does
+
+The overview also includes a reference guide explaining what each clean-up category covers and what is safe to delete.
+
+## Orphaned tab
+
+Orphaned attachments are database records that point to a file that no longer exists on disk. They are safe to delete — the file is already gone.
+
+### How it works
+
+The tab scans all attachment records and checks whether each file path resolves to an existing file on the server. Attachments whose file is missing are listed.
+
+### Columns
+
+| Column | Description |
+|---|---|
+| Checkbox | Select for bulk deletion |
+| Title | Attachment title and URL |
+| MIME Type | Registered file type |
+| Date | Upload date |
+| ID | WordPress attachment ID |
+
+### Deleting orphaned attachments
+
+Select one or more rows using the checkboxes (use the header checkbox to select all), then click **Delete N selected**. Each attachment is deleted via `wp_delete_attachment(id, true)` — the `true` flag forces file deletion even if the file doesn't exist, ensuring the database row is removed.
+
+## Unused tab
+
+Unused attachments are files that exist on disk and in the database but are not referenced anywhere on the site. Specifically, an attachment is considered unused if it meets all of these conditions:
+
+- It is not set as the featured image of any post
+- Its filename does not appear in the content of any published post or page
+- It is not attached to any post
+
+<Warning>
+Check the list carefully before bulk deleting. The content scan is text-based and may not detect images embedded via page builder shortcodes or dynamic block attributes. Review thumbnails before deleting.
+</Warning>
+
+### Columns
+
+| Column | Description |
+|---|---|
+| Checkbox | Select for bulk deletion |
+| Thumbnail | Small preview image |
+| Title | Attachment title and WordPress ID |
+| Size | File size on disk |
+| MIME | Shortened MIME type |
+| Date | Upload date |
+
+When rows are selected, the toolbar shows the total megabytes that will be freed.
+
+## Duplicates tab
+
+The Duplicates tab groups attachments by identical MD5 hash. Files with the same hash have identical binary content, so only one copy needs to be kept.
+
+### How duplicates are displayed
+
+Each group shows:
+
+- Number of identical files in the group
+- Wasted space (total size of all copies minus one)
+- A per-file list with thumbnail, title, file size, upload date, and WordPress ID
+
+The first item in each group (lowest attachment ID — the original) is marked **Keep (original)** and has no delete button. All subsequent copies have individual delete buttons.
+
+### Wasted space
+
+The tab header shows the total wasted space across all duplicate groups and how many attachments were scanned.
+
+### Deleting duplicates
+
+Click the delete button next to any duplicate copy. Each deletion is confirmed with a toast notification. After deleting, click **Scan** to refresh the groups.
+
+## Compress tab
+
+The Compress tab re-compresses JPEG and PNG files already in your media library using WordPress's built-in image editor (`wp_get_image_editor`). This can reduce file sizes without format conversion.
+
+### Quality slider
+
+Adjust the **Quality** slider (range: 40–100, default: 82) before compressing. The chosen value applies to all compressions in the current session.
+
+- **JPEG:** Quality is lossy. A value of 75–85 is recommended.
+- **PNG:** Re-save is always lossless regardless of the quality setting — the slider does not affect PNG output quality, but a re-save may still reduce file size by optimizing metadata.
+
+### Compression table
+
+The table lists all JPEG and PNG attachments. Each row shows a thumbnail, the attachment title, and the current file size.
+
+Click **Compress** on any row to compress that file. The **Result** column updates immediately with:
+
+- After size
+- Bytes saved and percentage saved (shown in green)
+- `No reduction` if the re-saved file was not smaller
+
+<Tip>
+Compression results are not reversible from within WP Manager Pro. Create a backup before bulk-compressing a large media library.
+</Tip>

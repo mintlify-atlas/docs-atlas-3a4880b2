@@ -1,0 +1,97 @@
+---
+title: 'Debug Tools'
+description: 'Toggle WordPress debug constants in wp-config.php and view, filter, copy, or clear the error log from the dashboard.'
+---
+
+Debug Tools gives you a single place to manage all WordPress debug flags and inspect error output without file system access.
+
+<Warning>
+Enabling debug constants on a live production site can expose sensitive error messages to visitors. Only enable `WP_DEBUG_DISPLAY` on development or staging environments. Always disable debug flags before a site goes live.
+</Warning>
+
+## Debug constants
+
+Navigate to **WP Manager → Debug Tools**. The **Debug Constants** card lists five toggles that map directly to `wp-config.php` defines:
+
+<CardGroup cols={2}>
+  <Card title="WP_DEBUG" icon="bug">
+    Master switch for WordPress debug mode. Required for any error output.
+  </Card>
+  <Card title="WP_DEBUG_LOG" icon="file-text">
+    Write PHP errors to `wp-content/debug.log` instead of displaying them.
+  </Card>
+  <Card title="WP_DEBUG_DISPLAY" icon="monitor">
+    Print errors directly on screen. Dangerous on production — visitors will see raw PHP errors.
+  </Card>
+  <Card title="SAVEQUERIES" icon="database">
+    Record every database query in `$wpdb->queries`. Adds overhead; use only while actively profiling.
+  </Card>
+  <Card title="SCRIPT_DEBUG" icon="code">
+    Force WordPress to load unminified `.dev.js` and `.dev.css` versions of core scripts and styles.
+  </Card>
+</CardGroup>
+
+Each toggle that poses a production risk shows a **Production risk** badge when enabled.
+
+After adjusting the toggles, click **Save Debug Settings** to write the changes to `wp-config.php`.
+
+<Note>
+If `wp-config.php` is not writable by the web server, all toggles are disabled and a warning is shown. Make the file group-writable (e.g. `chmod g+w wp-config.php`) to enable editing.
+</Note>
+
+## Error log info
+
+The **Error Log Info** card shows:
+
+- **Log File** — the resolved path to `debug.log` (auto-detected from `wp-content/debug.log` or the PHP `error_log` ini value)
+- **Status** — whether the file currently exists on disk
+- **File Size** — current size of the log file
+
+Use **Refresh Log** to reload the file metadata, or **Clear Log** to truncate the file to zero bytes.
+
+## Error log viewer
+
+The full-width **Error Log** card displays the last 200 lines of your WordPress error log in a scrollable monospace panel.
+
+### Filtering by level
+
+Use the **filter dropdown** to narrow the view:
+
+| Filter | Shows |
+|---|---|
+| All Levels | Every line in the log |
+| Errors only | Lines containing PHP Fatal or runtime errors |
+| Warnings | PHP Warning messages |
+| Notices | PHP Notice messages |
+| Deprecated | Deprecated function/argument notices |
+
+The filter is applied server-side — only matching lines are returned.
+
+### Actions
+
+| Button | Action |
+|---|---|
+| **Copy** | Copies the entire visible log content to the clipboard |
+| **Refresh** | Re-fetches the log from the server |
+| **Clear** | Permanently empties the log file |
+
+<Tip>
+Enable `WP_DEBUG` and `WP_DEBUG_LOG` together to start capturing errors silently to file without displaying them on screen. This is the recommended setup for investigating issues on a live site.
+</Tip>
+
+## Recommended debug workflow
+
+<Steps>
+  <Step title="Enable logging silently">
+    Turn on `WP_DEBUG` and `WP_DEBUG_LOG`. Leave `WP_DEBUG_DISPLAY` off. Save settings.
+  </Step>
+  <Step title="Reproduce the issue">
+    Navigate to the page or perform the action that triggers the problem.
+  </Step>
+  <Step title="Inspect the log">
+    Return to Debug Tools and open the Error Log viewer. Filter by **Errors only** to find the relevant line.
+  </Step>
+  <Step title="Clean up">
+    Once resolved, disable `WP_DEBUG` and `WP_DEBUG_LOG`, then clear the log file.
+  </Step>
+</Steps>

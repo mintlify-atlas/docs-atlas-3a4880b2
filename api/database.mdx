@@ -1,0 +1,315 @@
+---
+title: 'Database'
+description: 'Browse tables, paginate rows, run safe SQL queries, insert/update/delete rows, search & replace with serialized-data handling, optimize tables, and export SQL dumps.'
+---
+
+<Note>
+All database endpoints require the `manage_options` capability. The SQL query runner is read-only: only `SELECT`, `SHOW`, `DESCRIBE`, `DESC`, and `EXPLAIN` statements are permitted.
+</Note>
+
+---
+
+## GET /database/tables
+
+Lists all tables in the current database with engine, collation, row count, and size information.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/database/tables" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response fields
+
+<ResponseField name="tables" type="object[]" required>
+  Array of table metadata objects, sorted alphabetically by name.
+  <Expandable title="item properties">
+    <ResponseField name="name" type="string">Table name.</ResponseField>
+    <ResponseField name="rows" type="number">Approximate row count from `information_schema`.</ResponseField>
+    <ResponseField name="size_mb" type="string">Combined data and index size in megabytes as a string, e.g. `"0.05"`.</ResponseField>
+    <ResponseField name="data_free" type="number">Bytes of free space that can be reclaimed by `OPTIMIZE TABLE`.</ResponseField>
+    <ResponseField name="engine" type="string">Storage engine, e.g. `"InnoDB"`.</ResponseField>
+    <ResponseField name="collation" type="string">Table collation, e.g. `"utf8mb4_unicode_ci"`.</ResponseField>
+    <ResponseField name="created_at" type="string">Table creation timestamp.</ResponseField>
+    <ResponseField name="is_wp" type="boolean">`true` if the table name starts with the WordPress table prefix.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="total" type="number" required>Total number of tables.</ResponseField>
+<ResponseField name="total_size" type="number" required>Combined size of all tables in megabytes.</ResponseField>
+<ResponseField name="prefix" type="string" required>Current WordPress table prefix, e.g. `"wp_"`.</ResponseField>
+
+---
+
+## GET /database/table-data
+
+Returns paginated rows from a table along with column metadata and the primary key field.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/database/table-data?table=wp_options&page=1&limit=50" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Request parameters
+
+<ParamField query="table" type="string" required>
+  Exact table name to browse.
+</ParamField>
+
+<ParamField query="page" type="number" default="1">
+  Page number (1-indexed).
+</ParamField>
+
+<ParamField query="limit" type="number" default="50">
+  Rows per page. Capped at `500`.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="table" type="string">Table name.</ResponseField>
+<ResponseField name="columns" type="string[]">Ordered array of column names.</ResponseField>
+<ResponseField name="col_meta" type="object">
+  Column metadata keyed by column name.
+  <Expandable title="per-column properties">
+    <ResponseField name="type" type="string">MySQL column type, e.g. `"bigint(20)"`.</ResponseField>
+    <ResponseField name="null" type="boolean">`true` if the column allows `NULL`.</ResponseField>
+    <ResponseField name="key" type="string">Key type: `"PRI"`, `"UNI"`, `"MUL"`, or empty string.</ResponseField>
+    <ResponseField name="default" type="string | null">Default column value.</ResponseField>
+    <ResponseField name="extra" type="string">Extra info, e.g. `"auto_increment"`.</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="primary_key" type="string">Name of the primary key column, or empty string if none.</ResponseField>
+<ResponseField name="rows" type="object[]">Page of row data. Each row is an object keyed by column name.</ResponseField>
+<ResponseField name="total" type="number">Total row count in the table.</ResponseField>
+<ResponseField name="page" type="number">Current page number.</ResponseField>
+<ResponseField name="limit" type="number">Rows per page used for this response.</ResponseField>
+<ResponseField name="pages" type="number">Total number of pages.</ResponseField>
+
+---
+
+## POST /database/search-replace
+
+Performs a search and replace across one or more tables, with correct handling of PHP serialized data. Supports a dry-run mode to preview changes before committing.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/database/search-replace" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"search": "http://old.com", "replace": "https://new.com", "dry_run": true}'
+```
+
+### Request parameters
+
+<ParamField body="search" type="string" required>
+  The string to search for.
+</ParamField>
+
+<ParamField body="replace" type="string" required>
+  The replacement string.
+</ParamField>
+
+<ParamField body="tables" type="string[]">
+  Array of table names to search. If omitted or empty, all tables with the WordPress prefix are searched.
+</ParamField>
+
+<ParamField body="dry_run" type="boolean" default="false">
+  When `true`, the operation reports what would change without writing anything to the database.
+</ParamField>
+
+<ParamField body="case_insensitive" type="boolean" default="false">
+  When `true`, uses case-insensitive matching.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="success" type="boolean">`true` on success.</ResponseField>
+<ResponseField name="dry_run" type="boolean">Reflects the `dry_run` parameter sent in the request.</ResponseField>
+<ResponseField name="total" type="number">Total number of replacements found (or made).</ResponseField>
+<ResponseField name="results" type="object[]">
+  Per-table results for tables where at least one match was found.
+  <Expandable title="item properties">
+    <ResponseField name="table" type="string">Table name.</ResponseField>
+    <ResponseField name="count" type="number">Number of replacements in this table.</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="message" type="string">Human-readable summary of results.</ResponseField>
+
+---
+
+## POST /database/optimize
+
+Runs `OPTIMIZE TABLE` on one or more tables to reclaim free space and defragment indexes.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/database/optimize" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"tables": ["wp_posts", "wp_postmeta"]}'
+```
+
+### Request parameters
+
+<ParamField body="tables" type="string[]">
+  Array of table names to optimize. If omitted or empty, all tables with the WordPress prefix are optimized.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="success" type="boolean">`true` on success.</ResponseField>
+<ResponseField name="results" type="object[]">
+  Per-table results.
+  <Expandable title="item properties">
+    <ResponseField name="table" type="string">Table name.</ResponseField>
+    <ResponseField name="optimized" type="boolean">`true` if the optimize query succeeded for this table.</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="message" type="string">Status message.</ResponseField>
+
+---
+
+## POST /database/query
+
+Executes a read-only SQL query and returns the results. Only `SELECT`, `SHOW`, `DESCRIBE`, `DESC`, and `EXPLAIN` statements are permitted.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/database/query" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"sql": "SELECT ID, post_title FROM wp_posts WHERE post_status = \"publish\" LIMIT 10"}'
+```
+
+### Request parameters
+
+<ParamField body="sql" type="string" required>
+  The SQL query to execute. Must begin with `SELECT`, `SHOW`, `DESCRIBE`, `DESC`, or `EXPLAIN`.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="columns" type="string[]">Column names from the result set.</ResponseField>
+<ResponseField name="rows" type="object[]">Result rows as objects keyed by column name.</ResponseField>
+<ResponseField name="count" type="number">Number of rows returned.</ResponseField>
+
+<Warning>
+Write operations (`INSERT`, `UPDATE`, `DELETE`, `DROP`, `ALTER`, etc.) are blocked at the API level and return a `403` error. Use `POST /database/row` and `PUT /database/row` for row-level writes.
+</Warning>
+
+---
+
+## POST /database/row
+
+Inserts a new row into a table. Column names in the `data` object are validated against the actual table schema — unknown columns are silently dropped.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/database/row" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"table": "wp_wmp_notes", "data": {"title": "My Note", "content": "Hello", "color": "blue"}}'
+```
+
+### Request parameters
+
+<ParamField body="table" type="string" required>
+  Target table name.
+</ParamField>
+
+<ParamField body="data" type="object" required>
+  Key-value pairs of column names and values to insert.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="success" type="boolean">`true` on success.</ResponseField>
+<ResponseField name="insert_id" type="number">The auto-increment ID of the newly inserted row.</ResponseField>
+<ResponseField name="message" type="string">Status message.</ResponseField>
+
+---
+
+## PUT /database/row
+
+Updates an existing row identified by a primary key column and value.
+
+```bash
+curl -X PUT "https://yoursite.com/wp-json/wp-manager-pro/v1/database/row" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"table": "wp_options", "primary_key": "option_id", "primary_value": 1, "data": {"option_value": "new value"}}'
+```
+
+### Request parameters
+
+<ParamField body="table" type="string" required>
+  Target table name.
+</ParamField>
+
+<ParamField body="primary_key" type="string" required>
+  The column name to use as the `WHERE` condition. Must be an actual column in the table.
+</ParamField>
+
+<ParamField body="primary_value" type="string | number" required>
+  The value of the `primary_key` column that identifies the row to update.
+</ParamField>
+
+<ParamField body="data" type="object" required>
+  Key-value pairs of column names and new values.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="success" type="boolean">`true` on success.</ResponseField>
+<ResponseField name="rows_affected" type="number">Number of rows affected by the update.</ResponseField>
+<ResponseField name="message" type="string">Status message.</ResponseField>
+
+---
+
+## DELETE /database/row
+
+Deletes a row identified by a primary key column and value.
+
+```bash
+curl -X DELETE "https://yoursite.com/wp-json/wp-manager-pro/v1/database/row" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"table": "wp_wmp_notes", "primary_key": "id", "primary_value": 5}'
+```
+
+### Request parameters
+
+<ParamField body="table" type="string" required>
+  Target table name.
+</ParamField>
+
+<ParamField body="primary_key" type="string" required>
+  The column name to use as the `WHERE` condition.
+</ParamField>
+
+<ParamField body="primary_value" type="string | number" required>
+  The value identifying the row to delete.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="success" type="boolean">`true` on success.</ResponseField>
+<ResponseField name="rows_affected" type="number">Number of rows deleted.</ResponseField>
+<ResponseField name="message" type="string">Status message.</ResponseField>
+
+---
+
+## GET /database/export
+
+Exports a table as a `.sql` dump file and streams it directly to the browser as a file download. The dump includes `DROP TABLE IF EXISTS`, `CREATE TABLE`, and `INSERT` statements.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/database/export?table=wp_posts" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  --output wp_posts.sql
+```
+
+### Request parameters
+
+<ParamField query="table" type="string" required>
+  Name of the table to export.
+</ParamField>
+
+<Note>
+This endpoint streams a `text/plain` file download directly. It does not return a JSON response.
+</Note>

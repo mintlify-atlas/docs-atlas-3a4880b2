@@ -1,97 +1,83 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "WP Manager Pro"
+description: "Agency-ready WordPress management suite — a single React-powered control panel for managing every critical aspect of your WordPress sites."
 ---
 
-## Setting up
-
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quick Install" icon="bolt" href="/installation">
+    Install the plugin and get your management dashboard running in minutes.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+    From installation to your first plugin update in under 5 minutes.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Feature Overview" icon="grid-2" href="/features/dashboard">
+    Explore the full suite of management tools available in WP Manager Pro.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Integrate with the REST API to automate WordPress management tasks.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## What is WP Manager Pro?
 
-Everything you need to create world-class documentation.
+**WP Manager Pro** replaces the need for multiple separate admin plugins by providing a single, fast, modern interface for managing every critical aspect of a WordPress site. Install it as a standard WordPress plugin and a full React-powered control panel appears under your WP Admin menu.
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+All operations run through a secured REST API namespace (`wp-manager-pro/v1`) that requires the `manage_options` capability — so only site administrators can access it.
 
-## Need inspiration?
+## Everything you need in one place
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<CardGroup cols={3}>
+  <Card title="Plugin Manager" icon="puzzle-piece" href="/features/plugin-manager">
+    Install, activate, update, and version-manage plugins from WP.org or local ZIPs.
+  </Card>
+  <Card title="Theme Manager" icon="paintbrush" href="/features/theme-manager">
+    Browse, activate, upload, and roll back themes with full version history.
+  </Card>
+  <Card title="File Manager" icon="folder-open" href="/features/file-manager">
+    Browse and edit files with Monaco Editor (VS Code engine) and syntax highlighting.
+  </Card>
+  <Card title="Database Manager" icon="database" href="/features/database-manager">
+    Browse tables, edit rows, run safe SQL queries, and export dumps.
+  </Card>
+  <Card title="User Manager" icon="users" href="/features/user-manager">
+    Manage roles, rename logins, and impersonate users with secure tokens.
+  </Card>
+  <Card title="Security Suite" icon="shield-check" href="/features/security-overview">
+    Login protection, IP blocklist, 2FA, core integrity checks, and malware scanning.
+  </Card>
+  <Card title="Maintenance Mode" icon="triangle-exclamation" href="/features/maintenance-mode">
+    Beautiful maintenance pages with gradients, timers, and live preview.
+  </Card>
+  <Card title="Image Tools" icon="image" href="/features/image-tools">
+    WebP/AVIF conversion, batch processing, and SVG upload with sanitization.
+  </Card>
+  <Card title="Agency Tools" icon="building" href="/features/agency-tools">
+    White-label login, mail interceptor, client reports, and admin UI customizer.
+  </Card>
+  <Card title="Developer Utilities" icon="terminal" href="/features/developer-utilities">
+    Hook explorer, REST API tester, dummy data generator, and cache browser.
+  </Card>
+  <Card title="Cron Manager" icon="clock" href="/features/cron-manager">
+    Schedule, trigger, and monitor WordPress cron events in real time.
+  </Card>
+  <Card title="Database Backup" icon="hard-drive" href="/features/database-backup">
+    Full or table-specific SQL dumps with scheduled backup support.
+  </Card>
+</CardGroup>
+
+## Requirements
+
+| Requirement | Minimum |
+|-------------|---------|
+| WordPress   | 5.9+    |
+| PHP         | 7.4+    |
+| MySQL/MariaDB | 5.6+  |
+| Browser     | Modern (ES2020+) |
+
+<Note>
+  WP Manager Pro requires the `manage_options` WordPress capability. Only administrators can access the dashboard and all REST API endpoints enforce this requirement.
+</Note>
+
+## Built with modern technology
+
+WP Manager Pro is built with **React 19**, **TypeScript**, **Vite**, **Tailwind CSS**, and **shadcn/ui** on the frontend, backed by a PHP REST API running on the WordPress REST API infrastructure. The Monaco Editor (VS Code engine) powers the File Manager and Code Snippets editor for a native development experience inside your WordPress admin.

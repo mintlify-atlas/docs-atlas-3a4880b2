@@ -1,0 +1,63 @@
+---
+title: Database Backup
+description: Create, schedule, download, and manage full SQL database backups directly from the WordPress dashboard.
+---
+
+Database Backup (new in v1.4.0) generates complete SQL dumps of your WordPress database and stores them in a protected directory on the server. Scheduled backups (new in v1.8.0) automate this process via WP Cron.
+
+<Info>
+Backup files are stored in `wp-content/wmp-backups/` which is protected from direct web access via an `.htaccess` deny-all rule. Download your backups promptly and keep a copy offsite — backup files are not encrypted.
+</Info>
+
+## Creating a backup
+
+Click **Create Backup** in the top-right corner. The operation runs synchronously in the browser; a spinner is shown while the SQL dump is being generated. When complete, a toast confirms the filename and file size, and the new backup appears in the list.
+
+For large databases the request may take several seconds. Do not navigate away from the page while a backup is in progress.
+
+## Backup list
+
+The backup table shows every `.sql` file in the `wmp-backups/` directory:
+
+| Column | Description |
+|---|---|
+| Filename | SQL dump filename including a timestamp |
+| Size | Human-readable file size |
+| Created | Date and time the backup was created |
+| Actions | **Download** and **Delete** buttons |
+
+Click the **Download** icon to prepare and stream the file to your browser. Click the **Delete** icon (and confirm in the dialog) to permanently remove a backup from the server.
+
+## Scheduled backups
+
+Enable auto-backups to run automatically in the background via WordPress Cron.
+
+### Configuring the schedule
+
+| Setting | Options |
+|---|---|
+| Frequency | Daily, Weekly, Monthly |
+| Retain last | 3, 5, 10, or 30 backups |
+
+When **Enable Auto-Backup** is on, WP Manager Pro registers a WP Cron event that creates a new backup at the chosen interval. The next scheduled run time is shown below the form.
+
+### Auto-prune
+
+After each scheduled backup run, the oldest files are automatically deleted until only the configured **retain last N** backups remain. For example, with **Retain last: 5** and a daily schedule, the server holds exactly the five most recent daily backups.
+
+Click **Save Schedule** to apply changes.
+
+<Tip>
+For production sites, combine a daily schedule with a retain limit of 7 to keep a rolling week of backups. Download at least one backup offsite each week.
+</Tip>
+
+## Restoring a backup
+
+WP Manager Pro does not provide an in-plugin restore. To restore:
+
+1. Download the `.sql` file from the backup list.
+2. Import it via phpMyAdmin (**Database → Import**), WP-CLI (`wp db import backup.sql`), or any MySQL client.
+
+<Warning>
+Always test a restore on a staging environment before applying it to a production database.
+</Warning>

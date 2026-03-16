@@ -1,0 +1,213 @@
+---
+title: 'Changelog'
+description: 'Version history for WP Manager Pro. Format follows Keep a Changelog; versioning follows Semantic Versioning.'
+---
+
+<AccordionGroup>
+
+  <Accordion title="v2.9.2 — Media picker fix & logo select button" defaultOpen>
+    **Released:** 2026-03-17
+
+    #### Fixed
+
+    - **Media Library picker** — all "Select image" / "Media" buttons now reliably open the native WordPress Media Library modal instead of falling back to a browser `prompt()`. Root cause: `window.wp.media` was not yet callable at the time the React bundle first evaluated the check. Fix: a bridge function (`window.wmpOpenMedia`) is now injected via `wp_add_inline_script('after')`, which runs after all media scripts are fully initialised; React calls this bridge instead of calling `wp.media` directly.
+    - **Settings → Branding → Custom Logo URL** — added a dedicated **Select** button that opens the WordPress Media Library to pick the sidebar logo image, consistent with all other media pickers in the plugin.
+  </Accordion>
+
+  <Accordion title="v2.9.1 — Login page & Coming Soon redesign">
+    **Released:** 2026-03-17
+
+    #### Fixed
+
+    - **Login Page CSS not applying** — switched from inline `<style>` inside `login_enqueue_scripts` to `wp_add_inline_style('login', $css)` so custom styles are injected after WordPress's own login stylesheet.
+    - **Media button falling back to `prompt()`** — `wp_enqueue_media()` is now called in `Admin::enqueue_assets()`, making `window.wp.media` available in the React app for logo and background image pickers.
+
+    #### Added
+
+    - **Login Page — Privacy & Legal Links** — toggle to show the site's built-in Privacy Policy link below the login form; custom links HTML textarea for Terms of Service, Cookie Policy, or any anchor tags (passed through `wp_kses_post`).
+    - **Coming Soon — UI redesign** — side-by-side settings and live preview layout matching the Login Page; Media Library picker for logo and background image; content, colour, and email-capture sections reorganised into separate cards.
+    - **Coming Soon — rendered page redesign** — modern countdown with individual Day / Hours / Min / Sec glass-card tiles; background image support; fluid typography with `clamp()` font sizes.
+  </Accordion>
+
+  <Accordion title="v2.9.0 — Developer Utilities">
+    **Released:** 2026-03-17
+
+    #### Added
+
+    - **Developer Utilities page** (`/developer`) — new sidebar page with a 6-tab layout for advanced WordPress introspection and testing.
+    - **Hook Explorer** — browses all registered `add_action`/`add_filter` hooks from `$wp_filter`; shows hook name, priority, callback name with source file and line number via Reflection; searchable.
+    - **REST API Tester** — built-in Postman-style client pre-authenticated with WordPress nonce; browse registered routes by namespace; set method, path, JSON body, and headers; response panel shows status, duration, headers, and formatted body.
+    - **Dummy Data Generator** — create up to 50 test posts, pages, users, or WooCommerce products; items tagged with `_wmp_dummy_data` meta for safe bulk one-click cleanup.
+    - **Rewrite Rules Tester** — input any URL path and see the matched rule, redirect query string, and resolved `$query_vars`; expandable full rules table.
+    - **Object Cache Browser** — lists Redis keys via SCAN or WP internal cache entries by prefix; inspect value per key; delete individual keys.
+    - **Database Prefix Changer** — safely rename the `wp_` prefix with dry-run preview, `RENAME TABLE` for all tables, updates `option_name` and `meta_key` rows, rewrites `$table_prefix` in `wp-config.php`; confirmation requires checkbox and typed new prefix.
+    - **Agency Tools → Login Page** redesigned with side-by-side settings and persistent live preview; Media Library picker for logo and background image; colour swatches with native picker overlay.
+  </Accordion>
+
+  <Accordion title="v2.8.1 — Self-update fixes">
+    **Released:** 2026-03-16
+
+    #### Fixed
+
+    - Self-update badge stuck due to version constant not being bumped in the plugin file header.
+    - `site_transient_update_plugins` read-path hook added so the GitHub release comparison runs on every Plugins-page load.
+    - Changelog dialog showing "No changelog available" — now fetches the GitHub release body via `Self_Updater` instead of wordpress.org.
+
+    #### Added
+
+    - `POST /updates/check-self` endpoint — clears the cached GitHub transient and forces an immediate fresh check; accessible via the "Check WMP Update" button in Update Manager.
+  </Accordion>
+
+  <Accordion title="v2.8.0 — Agency Tools">
+    **Released:** 2026-03-16
+
+    #### Added
+
+    - **Agency Tools page** (`/agency`) — new page with 5-tab layout: Mail Interceptor, Login Page, Admin UI, Client Report, Coming Soon.
+    - **Mail Interceptor** — logs all outgoing `wp_mail()` calls; Dev Mode prevents real delivery; preview HTML/plain-text emails in-plugin; one-click Resend; log capped at 100 entries.
+    - **White-label Login Page** — custom logo, background colour/image, button colour, heading text, and footer text injected into `wp-login.php`; live preview pane.
+    - **Admin UI Customiser** — hide any WP admin menu item or dashboard widget for non-administrator roles; settings persisted in `wp_options`.
+    - **Client Report Generator** — on-demand HTML report: health score, WP/PHP/DB versions, SSL, WP_DEBUG, pending updates, last backup, active plugins; download or copy to clipboard.
+    - **Coming Soon Mode** — pre-launch page (200 OK) with custom branding, countdown timer, and optional email-capture form; captured email list with copy/clear actions.
+  </Accordion>
+
+  <Accordion title="v2.7.1 — Self-update system">
+    **Released:** 2026-03-16
+
+    #### Added
+
+    - **Self-Update System** — integrates WP Manager Pro with WordPress's native plugin update mechanism via GitHub Releases API (12-hour cache); shows "View Release Notes" link in the Plugins list update row.
+
+    #### Fixed
+
+    - Update Manager showing false "Done" for premium/unlicensed plugins — `null` result from `Plugin_Upgrader::upgrade()` now correctly identified as no-update; added distinct badges: "License Required" (amber) and "Update Unavailable" (grey).
+    - 2FA QR code not rendering — switched from deprecated Google Charts QR API to `api.qrserver.com`.
+    - Custom login logout not working — `logout` action added to the bypass array; `logout_redirect` filter added to redirect to the custom login URL after logout.
+    - Plain Permalinks warning banner added across all plugin pages (REST API requires pretty permalinks).
+  </Accordion>
+
+  <Accordion title="v2.7.0 — Security Scanner">
+    **Released:** 2026-03-16
+
+    #### Added
+
+    - **Security Scanner page** (`/security-scanner`) — dedicated 4-tab page with a unified security score.
+    - **Overview tab** — animated security score ring (0–100, letter grade A+ to F); four summary cards; "Run All Scans" button.
+    - **Malware Scanner** — scans up to 8,000 PHP/JS/HTML files against 13 detection patterns including `eval(base64_decode(...))`, `preg_replace` with `/e` modifier, known webshell markers (FilesMan, r57, c99), and `document.write(unescape(...))` JS injection; files >512 KB skipped.
+    - **Vulnerability Database** — checks plugins and themes against the WPScan CVE API; shows CVE title, CVSS score, fix version, and reference links; configurable API key.
+    - **SSL Monitor** — reads certificate via `stream_socket_client` + `openssl_x509_parse`; shows subject, issuer, SAN entries, validity dates, and days remaining with colour-coded alerts.
+    - **Core & PHP tab** — checks WordPress version against latest; PHP EOL status for versions 5.6 through 8.4.
+  </Accordion>
+
+  <Accordion title="v2.6.0 — Update Manager">
+    **Released:** 2026-03-16
+
+    #### Added
+
+    - **Update Manager page** (`/updates`) — 3-tab update control centre.
+    - **Available Updates tab** — lists all pending plugin, theme, and WordPress core updates; per-item "View Changelog" and "Update Now" buttons; checkbox multi-select with batch update action.
+    - **Pre-update backup** — each update automatically ZIPs the plugin/theme directory to `wp-content/wmp-backups/updates/` before upgrading.
+    - **History tab** — log of every update run (up to 100 entries) with rollback button when a backup ZIP exists.
+    - **Scheduled tab** — queue any plugin or theme update at a specific future datetime via WP Cron.
+  </Accordion>
+
+  <Accordion title="v2.5.0 — Command Palette & settings import/export">
+    **Released:** 2026-03-16
+
+    #### Added
+
+    - **Command Palette** — `Cmd+K` / `Ctrl+K` global overlay with fuzzy search across all pages and quick actions (Flush Cache, Toggle Maintenance, Clear Error Log, Purge Transients, Create Backup); keyboard navigation; recent pages from localStorage.
+    - **Settings Export** — export all WP Manager Pro config as a signed JSON bundle with HMAC integrity signature.
+    - **Settings Import** — drag-and-drop JSON import with client-side preview, per-section overwrite control, and cross-site warning.
+    - **WordPress XML Export** — trigger WordPress's native content export (All / Posts / Pages / Media / custom CPT) as a downloadable XML file.
+  </Accordion>
+
+  <Accordion title="v2.4.0 — Dev Tools">
+    **Released:** 2026-03-16
+
+    #### Added
+
+    - **Dev Tools page** (`/dev-tools`) — 5-tab developer toolkit: `wp-config.php` Visual Editor, `.htaccess` Editor, PHP Info Viewer, Query Monitor, and Environment Badge.
+    - **wp-config.php Visual Editor** — accordion groups per constant category; bool constants as switches; `DB_PASSWORD` masked with eye toggle; "Regenerate All Salts" button.
+    - **`.htaccess` Editor** — auto-backup to `.htaccess.wmp-backup` before every save; restore from backup button.
+    - **Query Monitor** — reads `$wpdb->queries` when `SAVEQUERIES` is on; stat cards for total queries, total time, slow query count, memory peak.
+    - **Environment Badge** — select Production / Staging / Development / Local; badge rendered in the sidebar header.
+  </Accordion>
+
+  <Accordion title="v2.3.1 — Redis object cache">
+    **Released:** 2026-03-16
+
+    #### Added
+
+    - **Bundled Redis object-cache drop-in** — installs its own `wp-content/object-cache.php`; no third-party plugin required.
+    - **Object Cache tab** in Performance — live Redis stats (hit ratio, keys, memory, uptime, ops/sec); Install / Enable / Disable / Flush actions.
+    - **Redis Cache admin bar node** — green pulsing dot with Redis version badge; Flush Cache and Object Cache Settings sub-items.
+  </Accordion>
+
+  <Accordion title="v2.3.0 — Content Tools">
+    **Released:** 2026-03-11
+
+    #### Added
+
+    - **Content Tools page** — 4-tab page: Bulk Post Editor, Post Duplicator, Scheduled Post Manager, Options Table Editor.
+    - **Bulk Post Editor** — filter by post type, status, and keyword; bulk-update status, author, or publish date.
+    - **Post Duplicator** — clone any post, page, or CPT as a draft; options to copy meta, taxonomies, and featured image.
+    - **Scheduled Post Manager** — list all future-scheduled content with live countdown; overdue posts highlighted.
+    - **Options Table Editor** — paginated, searchable browser for all `wp_options` rows with inline edit and autoload toggle.
+  </Accordion>
+
+  <Accordion title="v2.2.0 — Media Manager">
+    **Released:** 2026-03-11
+
+    #### Added
+
+    - **Media Manager page** — 5-tab page: Overview, Orphaned, Unused, Duplicates, Compress.
+    - Orphaned attachments (missing physical file) — bulk delete.
+    - Unused attachments (unattached, not used as featured images, not referenced in content) — thumbnail preview, bulk delete.
+    - Duplicates grouped by MD5 hash — wasted-space display; delete individual duplicates (keeps oldest).
+    - Compress tab — re-compress JPEG/PNG via `wp_get_image_editor`; adjustable quality slider (40–100); before/after size display.
+  </Accordion>
+
+  <Accordion title="v2.1.0 — Cron Manager">
+    **Released:** 2026-03-10
+
+    #### Added
+
+    - **Cron Manager page** — 3-tab page: Events, Schedules, Health.
+    - Event Browser — full list of scheduled events with colour-coded urgency; manual trigger with output capture.
+    - Custom Schedules — register new recurrence intervals from the UI; minimum 60-second interval.
+    - Cron Health tab — status cards for `DISABLE_WP_CRON`, overdue event count, `WP_CRON_LOCK_TIMEOUT`, `ALTERNATE_WP_CRON`; real cron setup guide.
+  </Accordion>
+
+  <Accordion title="v2.0.0 — Security Suite">
+    **Released:** 2026-03-10
+
+    #### Added
+
+    - Security page fully redesigned with 5-tab layout: Overview, Login, Hardening, Integrity, Two-Factor Auth.
+    - **Login Attempt Limiter** — configurable max attempts, counting window, and lockout duration; lockout log with per-IP unlock.
+    - **Disable XML-RPC** toggle.
+    - **Hide WordPress Version** toggle — removes version from `<meta name="generator">` and strips `?ver=` from asset URLs.
+    - **IP Blocklist** — exact IPs and CIDR ranges; enforced on `init` hook.
+    - **Core File Integrity** — MD5 checksums from wordpress.org; reports modified and missing files in `wp-admin/` and `wp-includes/`.
+    - **TOTP 2FA** — RFC 6238, SHA1, 6-digit codes, 30-second window; 8 one-time backup codes stored as MD5 hashes; 100% native PHP.
+  </Accordion>
+
+  <Accordion title="Earlier versions (v1.0.0 – v1.9.0)">
+
+    | Version | Released | Highlights |
+    |---|---|---|
+    | v1.9.0 | 2026-03-10 | Performance page: transients browser, DB cleanup, object cache status |
+    | v1.8.0 | 2026-03-10 | Sidebar redesign (shadcn sidebar-07 style); WP Admin Menu Toggle; Settings/Branding page; Scheduled Backups; Server Config Generator in Image Tools |
+    | v1.7.0 | 2026-03-09 | Monaco Editor in Code Snippets; Scheduled Backups |
+    | v1.6.0 | 2026-03-09 | WebP delivery via `wp_get_attachment_url` filter; Replace Original with WebP; auto-delete sidecar files on attachment delete |
+    | v1.5.0 | 2026-03-09 | Batch convert existing media to WebP/AVIF with live progress bar; Maintenance Mode scope control and secret bypass URL |
+    | v1.4.0 | 2026-03-09 | Code Snippets Manager; Redirect Manager; Email/SMTP; Database Backup; Audit Log |
+    | v1.3.0 | 2026-03-08 | Maintenance Mode appearance editor (gradients, colours, icons, countdown, live preview); Admin URL Protection; AVIF uploads; Database Manager row CRUD and pagination |
+    | v1.2.0 | 2026-03-08 | Plugin/theme one-click update and version downgrade; Light/Dark mode toggle |
+    | v1.1.0 | 2026-03-08 | Plugin/theme ZIP upload and export; Monaco Editor in File Manager; File upload and rename; Reset Tools; SVG support with server-side sanitization |
+    | v1.0.0 | 2026-03-07 | Initial release — Dashboard, Plugin Manager, Theme Manager, File Manager, Database Manager, User Manager, System Info, Maintenance Mode, Debug Tools, Image Tools, Notes |
+
+  </Accordion>
+
+</AccordionGroup>

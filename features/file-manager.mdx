@@ -1,0 +1,123 @@
+---
+title: File Manager
+description: Browse and edit WordPress files with a Monaco Editor (VS Code engine), syntax highlighting, and built-in path traversal protection.
+---
+
+The File Manager gives you a filesystem browser starting from `ABSPATH` (the WordPress root directory) and a full-featured code editor powered by Monaco — the same engine that runs VS Code. You can open, edit, and save files, create directories, rename and delete files and folders, and upload files to any directory.
+
+## Layout
+
+The File Manager uses a split-panel layout:
+
+- **Left panel** — filesystem browser with breadcrumb navigation and file metadata
+- **Right panel** — Monaco Editor, shown when a file is open for editing
+
+When no file is open, the browser fills the full width.
+
+## Navigating the filesystem
+
+The browser starts at `ABSPATH` (the WordPress installation root). Clicking a directory opens it and updates the breadcrumb trail at the top.
+
+- Click any **directory** to navigate into it
+- Click **..** or a breadcrumb segment to go up
+- Click the **Home** icon in the breadcrumb to return to `ABSPATH`
+
+Each file row shows the file name and, for files, the file size. A **Read-only** badge appears on files or directories that are not writable by the web server.
+
+## Editing files
+
+Click any file to open it in the Monaco Editor panel.
+
+<Steps>
+  <Step title="Open a file">
+    Click the file in the browser panel. The file contents are loaded into the Monaco Editor. The file extension is shown as a badge in the editor toolbar.
+  </Step>
+  <Step title="Edit">
+    Edit the file using the Monaco Editor. Syntax highlighting, word wrap, and automatic layout adjustments are enabled. The status bar at the bottom shows the full file path and line count.
+  </Step>
+  <Step title="Save">
+    Click **Save** in the editor toolbar, or press the save button. A success toast confirms the write. The browser panel is not affected — you can continue navigating while keeping the editor open.
+  </Step>
+  <Step title="Close the editor">
+    Click **✕** in the editor toolbar to close the file and return to the full-width browser view.
+  </Step>
+</Steps>
+
+## Supported languages
+
+Monaco applies syntax highlighting based on file extension:
+
+| Extension | Language |
+|-----------|----------|
+| `.php` | PHP |
+| `.js`, `.jsx` | JavaScript |
+| `.ts`, `.tsx` | TypeScript |
+| `.css`, `.scss` | CSS |
+| `.html`, `.htm` | HTML |
+| `.json` | JSON |
+| `.xml` | XML |
+| `.md` | Markdown |
+| `.yml`, `.yaml` | YAML |
+| `.svg` | XML (SVG) |
+| Other text files | Plain text |
+
+## Managing files and directories
+
+### Upload a file
+
+Click **Upload File** in the page header. A file picker opens. Select a file to upload it to the currently open directory. The file list refreshes automatically after upload.
+
+### Create a directory
+
+Click **New Folder** in the page header. An inline input appears at the top of the file list. Type the directory name and press Enter (or click the save button) to create it. Press Escape to cancel.
+
+### Rename a file or folder
+
+Hover over any file or directory row to reveal the action buttons. Click the **pencil icon** to open the Rename dialog. Enter the new name and click **Rename** (or press Enter).
+
+### Delete a file or folder
+
+Hover over any row and click the **trash icon**. A confirmation dialog appears. Deleting a directory removes all of its contents.
+
+<Warning>
+  Deletion is permanent. There is no recycle bin or undo. When deleting a directory, all files and subdirectories inside it are removed.
+</Warning>
+
+## Security
+
+The File Manager enforces several server-side protections:
+
+<CardGroup cols={2}>
+  <Card title="Path traversal protection" icon="shield">
+    All file paths are validated against `ABSPATH` using PHP `realpath()`. Any path that resolves outside the WordPress root is rejected with a `403` error.
+  </Card>
+  <Card title="Critical file guard" icon="lock">
+    `wp-config.php`, `.htaccess`, and `index.php` are protected from deletion and rename operations at the API level.
+  </Card>
+  <Card title="2 MB read limit" icon="file">
+    The editor will not load files larger than 2 MB to prevent browser memory issues with large binary or log files.
+  </Card>
+  <Card title="Text-only editing" icon="code">
+    File reads are limited to text-based file types. Binary files cannot be opened in the editor.
+  </Card>
+</CardGroup>
+
+<Warning>
+  Editing files directly can break your site if changes contain syntax errors. Always test after saving PHP or configuration files. The File Manager does not provide syntax validation before saving.
+</Warning>
+
+<Tip>
+  Use **Refresh** in the page header to reload the current directory listing if files have been added or changed outside of WP Manager Pro.
+</Tip>
+
+## REST API endpoints
+
+```http
+GET    /wp-json/wp-manager-pro/v1/files
+GET    /wp-json/wp-manager-pro/v1/files/read
+POST   /wp-json/wp-manager-pro/v1/files/write
+DELETE /wp-json/wp-manager-pro/v1/files/delete
+POST   /wp-json/wp-manager-pro/v1/files/mkdir
+POST   /wp-json/wp-manager-pro/v1/files/upload
+POST   /wp-json/wp-manager-pro/v1/files/rename
+```

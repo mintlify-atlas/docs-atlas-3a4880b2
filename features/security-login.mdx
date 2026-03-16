@@ -1,0 +1,111 @@
+---
+title: 'Login protection'
+description: 'Move wp-login.php to a secret URL, limit brute-force attempts per IP, and manage the lockout log — all from the Security → Login tab.'
+icon: 'lock'
+---
+
+The **Login** tab gives you two independent defences against unauthorised login attempts: an Admin URL that hides the login page entirely, and a Login Attempt Limiter that locks out IPs that exceed a failed-login threshold.
+
+## Admin URL protection
+
+Admin URL Protection replaces the well-known `wp-login.php` path with a secret slug of your choice. Visitors who navigate directly to `wp-login.php` are silently redirected to the homepage instead of seeing the login form.
+
+### How it works
+
+- When you enable protection, WP Manager Pro stores your chosen slug in `wp_options` (option key `wmp_admin_slug`).
+- On every WordPress request, the `init` hook checks whether the request path matches the stored slug. If it does, the visitor is forwarded to `wp-login.php` with the slug appended as a query parameter (e.g. `wp-login.php?my-secret-login`).
+- On `login_init`, direct `GET` requests to `wp-login.php` without the secret parameter are redirected to `home_url('/')` and execution stops.
+- `POST` requests (the actual form submission) and password-reset flows (`lostpassword`, `retrievepassword`, `resetpass`, `rp`) are **not** blocked — they continue to work normally.
+- After logout, WordPress redirects to your custom login URL instead of `wp-login.php`.
+
+<Warning>
+Copy your new login URL before clicking **Enable Protection**. If you lose the URL, you can recover access by deactivating WP Manager Pro via FTP/SSH or by directly deleting the `wmp_admin_slug` option from the database.
+</Warning>
+
+### Slug rules
+
+The slug must be:
+- At least 4 characters
+- Lowercase letters, numbers, hyphens, and underscores only
+- Not one of the reserved words: `wp-admin`, `wp-login`, `wp-content`, `wp-includes`, `admin`, `login`, `dashboard`
+
+### How to hide the login page
+
+<Steps>
+  <Step title="Open Security → Login">
+    In the WP Admin sidebar, click **WP Manager → Security**, then select the **Login** tab.
+  </Step>
+  <Step title="Enter a secret slug">
+    Type your chosen slug in the input field (e.g. `my-secret-login`). Avoid common words.
+  </Step>
+  <Step title="Copy the new URL">
+    Once you type the slug, a preview URL appears below the input. Click the copy button to save it to your clipboard.
+  </Step>
+  <Step title="Click Enable">
+    Click **Enable** (or **Update** if protection is already on). The slug is saved and enforcement begins immediately.
+  </Step>
+  <Step title="Test the new URL">
+    Open the copied URL in a new browser tab or private window to confirm it loads the login form.
+  </Step>
+</Steps>
+
+To revert to the standard `wp-login.php`, click **Disable Protection**.
+
+---
+
+## Login Attempt Limiter
+
+The Login Attempt Limiter counts failed authentication attempts per IP address within a configurable time window. When an IP exceeds the threshold it is locked out for a configurable duration and all further login attempts return an error message.
+
+### How it works
+
+The limiter fires at priority `30` on the WordPress `authenticate` filter — before any page output is sent.
+
+**Counting attempts:**
+- Each failed login stores a timestamp in a WordPress transient keyed by `wmp_attempts_{md5(IP)}`.
+- On every attempt, timestamps older than the counting window are pruned, then the new timestamp is appended.
+- If the total within the window reaches the threshold, a lockout transient (`wmp_lockout_{md5(IP)}`) is set with a TTL equal to the lockout duration.
+- The event is appended to the lockout log stored in `wp_options` (up to 500 entries).
+
+**Blocking locked-out IPs:**
+- On the `authenticate` filter, the limiter checks for the lockout transient. If found, a `WP_Error` is returned with a message stating how many minutes remain.
+- The lockout expires automatically when the transient TTL elapses, or you can unlock an IP manually from the Lockout Log.
+
+### Configuration
+
+| Setting | Default | Description |
+|---|---|---|
+| Max Attempts | 5 | Number of failed logins within the window before lockout |
+| Window (seconds) | 300 | How far back to count failed attempts (5 minutes) |
+| Lockout (seconds) | 900 | How long the IP is blocked after exceeding the threshold (15 minutes) |
+
+<Tip>
+For most sites, keeping the defaults (5 attempts / 5 min window / 15 min lockout) gives good brute-force protection without locking out users who simply mistype their password.
+</Tip>
+
+Enable the toggle, adjust the three fields to your preference, and click **Save Settings**.
+
+---
+
+## Lockout log
+
+The Lockout Log appears below the limiter settings on the Login tab. It shows a paginated history of every IP that has been locked out.
+
+### Log columns
+
+| Column | Description |
+|---|---|
+| IP | The locked-out IP address |
+| Username | The username that was attempted |
+| Time | Timestamp of the lockout event |
+| Attempts | Number of failed attempts recorded |
+
+### Actions
+
+- **Unlock** — removes the lockout transient for that IP and deletes the entry from the log, allowing the IP to attempt logins immediately.
+- **Refresh** — re-fetches the log from the API.
+- **Clear** — deletes all log entries at once (does not remove active lockout transients — those expire naturally).
+
+<Note>
+Clearing the log does not remove active lockout transients. IPs that are currently locked out will remain locked until the transient TTL expires or you unlock them individually.
+</Note>

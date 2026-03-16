@@ -1,0 +1,154 @@
+---
+title: 'Building from source'
+description: 'Compile the React frontend and package WP Manager Pro for distribution.'
+---
+
+## Prerequisites
+
+You need Node.js 18+ and npm 9+ installed on your machine. The pre-built files in `assets/build/` are already included in the plugin ZIP, so you only need to build from source if you are modifying the frontend.
+
+```bash
+node --version  # must be >= 18
+npm --version   # must be >= 9
+```
+
+## Setup
+
+<Steps>
+
+<Step title="Clone the repository">
+
+```bash
+git clone https://github.com/nurkamol/wp-manager-pro.git
+cd wp-manager-pro
+```
+
+</Step>
+
+<Step title="Install dependencies">
+
+```bash
+npm install
+```
+
+This installs all frontend dependencies declared in `package.json`, including React 19, TypeScript 5.7, Vite 6, Tailwind CSS 3.4, and shadcn/ui.
+
+</Step>
+
+<Step title="Start development mode">
+
+```bash
+npm run dev
+```
+
+Vite starts a development server. Because the React app is designed to run inside WordPress admin, hot-module reloading on a standalone Vite dev server is mainly useful for component-level work. Full integration testing requires the plugin to be active in a WordPress installation.
+
+</Step>
+
+<Step title="Create a production build">
+
+```bash
+npm run build
+```
+
+This runs `tsc -b && vite build`. Vite outputs two files to `assets/build/`:
+
+| File | Uncompressed | Gzipped |
+|---|---|---|
+| `index.js` | ~773 kB | ~216 kB |
+| `style.css` | ~51 kB | ~9 kB |
+
+The build configuration is defined in `vite.config.ts`. The output directory is set to `assets/build/` with a fixed entry filename (`index.js`) so the PHP enqueue call always has a predictable path.
+
+</Step>
+
+</Steps>
+
+## Package a distribution ZIP
+
+After building, you can create a distribution ZIP that includes only the files needed for a WordPress plugin installation:
+
+```bash
+cd ..
+zip -r wp-manager-pro-v2.9.2.zip \
+  wp-manager-pro/wp-manager-pro.php \
+  wp-manager-pro/includes/ \
+  wp-manager-pro/assets/build/
+```
+
+<Note>
+  The `src/` directory, `node_modules/`, `package.json`, and build config files are not needed in the distribution ZIP. Only `wp-manager-pro.php`, `includes/`, and `assets/build/` are required for a working installation.
+</Note>
+
+## Tech stack
+
+### Frontend
+
+| Package | Version | Purpose |
+|---|---|---|
+| React | 19 | UI framework |
+| TypeScript | 5.7 | Type safety |
+| Vite | 6 | Build tool and dev server |
+| Tailwind CSS | 3.4 | Utility-first styling |
+| shadcn/ui | manual | Component library built on Radix UI |
+| TanStack Query | v5 | Server state management and caching |
+| React Router | v7 | Client-side routing (HashRouter) |
+| Monaco Editor | latest | VS Code editor engine (File Manager, Code Snippets) |
+| Lucide React | 0.469 | Icon set |
+| Sonner | 1.7 | Toast notifications |
+| date-fns | v4 | Human-readable timestamps (Cron Manager) |
+
+### Backend
+
+| Technology | Details |
+|---|---|
+| PHP | 7.4+ |
+| WordPress REST API | Namespace: `wp-manager-pro/v1` |
+| Authentication | WordPress nonce (`wp_rest`) via `X-WP-Nonce` header |
+| Authorization | `manage_options` capability on all routes |
+
+## Project structure
+
+```
+wp-manager-pro/
+├── wp-manager-pro.php          # Plugin entry point, constants, activation hooks
+├── includes/
+│   ├── class-plugin.php        # Singleton bootstrap, hook registration
+│   ├── class-admin.php         # Admin menu, asset enqueuing, plugin links
+│   └── api/
+│       ├── class-routes.php    # REST route registration (96+ endpoints)
+│       └── controllers/        # One controller per feature area
+├── assets/
+│   └── build/
+│       ├── index.js            # Compiled React app
+│       └── style.css           # Compiled styles
+├── src/                        # React / TypeScript source
+│   ├── main.tsx
+│   ├── App.tsx
+│   ├── lib/
+│   │   ├── api.ts              # REST API client
+│   │   └── utils.ts
+│   ├── components/
+│   │   ├── Sidebar.tsx
+│   │   └── ui/                 # shadcn/ui components
+│   └── pages/                  # One page component per feature
+├── vite.config.ts
+├── tailwind.config.js
+├── tsconfig.json
+└── package.json
+```
+
+### Path alias
+
+Vite is configured with a `@` alias pointing to `src/`:
+
+```typescript
+// vite.config.ts
+resolve: {
+  alias: {
+    '@': path.resolve(__dirname, './src'),
+  },
+},
+```
+
+Import from `@/components/ui/button` instead of `../../components/ui/button`.

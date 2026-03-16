@@ -1,0 +1,101 @@
+---
+title: 'Settings'
+description: 'Get and save white-label branding settings: plugin name, admin menu label, and sidebar logo URL.'
+---
+
+The Settings endpoints control WP Manager Pro's white-label branding options. Changes take effect immediately after the page is reloaded.
+
+---
+
+## GET /settings
+
+Returns the current branding settings stored in `wp_options`.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/settings" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response fields
+
+<ResponseField name="plugin_name" type="string">
+  Custom plugin display name (`wmp_plugin_name` option). Empty string if not set.
+</ResponseField>
+
+<ResponseField name="menu_label" type="string">
+  Custom admin menu label (`wmp_menu_label` option). Empty string if not set.
+</ResponseField>
+
+<ResponseField name="logo_url" type="string">
+  Custom sidebar logo URL (`wmp_logo_url` option). Empty string if not set.
+</ResponseField>
+
+### Example response
+
+```json
+{
+  "plugin_name": "Site Manager",
+  "menu_label": "Site Manager",
+  "logo_url": "https://yoursite.com/wp-content/uploads/logo.png"
+}
+```
+
+---
+
+## POST /settings
+
+Saves branding settings. All three fields are optional — omitted fields are saved as empty strings.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/settings" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"plugin_name": "Site Manager", "menu_label": "Site Manager", "logo_url": "https://yoursite.com/wp-content/uploads/logo.png"}'
+```
+
+### Request parameters
+
+<ParamField body="plugin_name" type="string">
+  Custom name for the plugin. Replaces "WP Manager Pro" in the plugin list and page titles. Sanitized with `sanitize_text_field()`.
+</ParamField>
+
+<ParamField body="menu_label" type="string">
+  Custom label for the admin sidebar menu item. Sanitized with `sanitize_text_field()`.
+</ParamField>
+
+<ParamField body="logo_url" type="string">
+  URL to a custom logo image displayed in the plugin sidebar. Sanitized with `esc_url_raw()`.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="success" type="boolean">
+  `true` when settings were saved successfully.
+</ResponseField>
+
+<ResponseField name="plugin_name" type="string">
+  The saved plugin name value.
+</ResponseField>
+
+<ResponseField name="menu_label" type="string">
+  The saved menu label value.
+</ResponseField>
+
+<ResponseField name="logo_url" type="string">
+  The saved logo URL value.
+</ResponseField>
+
+### Example response
+
+```json
+{
+  "success": true,
+  "plugin_name": "Site Manager",
+  "menu_label": "Site Manager",
+  "logo_url": "https://yoursite.com/wp-content/uploads/logo.png"
+}
+```
+
+<Tip>
+To reset branding back to defaults, POST empty strings for all three fields.
+</Tip>

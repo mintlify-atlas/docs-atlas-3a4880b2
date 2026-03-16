@@ -1,0 +1,75 @@
+---
+title: Notes
+description: Color-coded, persistent notes stored in the database — site-specific reminders, client notes, and task lists that survive plugin updates.
+---
+
+Notes provides a simple, persistent note-taking board inside WP Manager Pro. Notes are stored in the `wp_wmp_notes` database table and remain intact across plugin updates, deactivations, and reactivations.
+
+## Creating a note
+
+<Steps>
+  <Step title="Click New Note">
+    Click the **New Note** button in the top-right corner of the Notes page.
+  </Step>
+  <Step title="Enter a title">
+    The title field is required. Keep it short — it appears as the card heading.
+  </Step>
+  <Step title="Write the content">
+    The content field is optional. It supports freeform text including line breaks.
+  </Step>
+  <Step title="Choose a colour">
+    Select one of the six colour options: Default (white), Blue, Green, Yellow, Red, or Purple. The colour sets the card background and border.
+  </Step>
+  <Step title="Save">
+    Click **Create Note**. The card appears on the board immediately, ordered by last-updated timestamp.
+  </Step>
+</Steps>
+
+## Note cards
+
+Each note is displayed as a card in a responsive grid (1–4 columns depending on screen width). The card shows:
+
+- The note title (bold)
+- Up to six lines of content (truncated with an ellipsis if longer)
+- The last-updated timestamp
+- **Edit** and **Delete** icon buttons
+
+Notes are sorted by `updated_at` descending — the most recently edited note always appears first.
+
+## Colour options
+
+| Colour | Use case |
+|---|---|
+| Default (white) | General notes |
+| Blue | Information or reference notes |
+| Green | Completed tasks or positive reminders |
+| Yellow | Warnings or items to review |
+| Red | Critical issues or urgent tasks |
+| Purple | Client-specific notes |
+
+## Editing and deleting
+
+Click the **edit pencil** icon on any card to open the edit dialog with the existing title, content, and colour pre-filled. Make your changes and click **Update Note**.
+
+Click the **trash** icon to open a confirmation dialog before permanently deleting the note.
+
+## Use cases
+
+<CardGroup cols={2}>
+  <Card title="Site reminders" icon="bell">
+    Leave a note for yourself about a recurring maintenance task, a client's preferred update window, or a known issue to check next time.
+  </Card>
+  <Card title="Client notes" icon="user">
+    Store the client's preferred contact, billing cycle, hosting provider, or special configuration notes directly alongside the site's admin tools.
+  </Card>
+  <Card title="Task lists" icon="list-checks">
+    Use yellow or red notes for outstanding tasks. Delete or recolour them to green when complete.
+  </Card>
+  <Card title="Deployment notes" icon="rocket">
+    Record what changed during a deployment — plugin versions updated, settings modified — so you have a lightweight audit trail separate from the formal Audit Log.
+  </Card>
+</CardGroup>
+
+<Info>
+Notes survive plugin updates because they live in the `wp_wmp_notes` custom database table, which is created on plugin activation and never dropped automatically. Uninstalling the plugin via WordPress's **Delete** action will remove the table.
+</Info>

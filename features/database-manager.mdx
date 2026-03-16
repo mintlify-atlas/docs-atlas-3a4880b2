@@ -1,0 +1,142 @@
+---
+title: Database Manager
+description: Browse tables, view and edit rows, run search and replace with serialized-data support, optimize tables, and run read-only SQL queries.
+---
+
+The Database Manager gives you direct access to your WordPress database from the admin interface. You can browse every table, insert and edit rows, export SQL dumps, run a safe search-and-replace across all tables, and execute read-only SQL queries for inspection and debugging.
+
+## Overview
+
+The Database Manager is organised into three tabs:
+
+<CardGroup cols={3}>
+  <Card title="Tables" icon="table-cells">
+    Browse all database tables, view and edit paginated row data, insert rows, delete rows, and export individual tables as SQL dumps.
+  </Card>
+  <Card title="Search & Replace" icon="magnifying-glass">
+    Find and replace text across all tables with correct handling of PHP serialized data. Includes a dry-run preview mode.
+  </Card>
+  <Card title="SQL Query" icon="terminal">
+    Run read-only SQL statements (`SELECT`, `SHOW`, `DESCRIBE`, `EXPLAIN`) and view results in a formatted table.
+  </Card>
+</CardGroup>
+
+The page header shows the total table count and combined database size. An **Optimize All** button runs `OPTIMIZE TABLE` on every table at once.
+
+## Tables tab
+
+### Table browser
+
+The left column lists all database tables with:
+
+- Table name (monospace font; WordPress core tables are highlighted)
+- Row count
+- Size in MB
+
+Click any table to select it and load its data in the right panel.
+
+### Table data viewer
+
+The right panel shows paginated rows for the selected table. The toolbar displays:
+
+- Total row count and the current row range (e.g. `1–50 of 1,243 rows`)
+- The primary key column name
+- A page-size selector (50, 100, 250, or 500 rows per page)
+- **Add Row**, **Export SQL**, and **Refresh** buttons
+
+Column headers show the column name, column type, and a **PK** badge on the primary key column.
+
+### Editing rows
+
+Hover over any row to reveal the **Edit** (pencil) and **Delete** (trash) action buttons.
+
+**To edit a row:**
+1. Click the pencil icon to open the Edit Row dialog.
+2. All columns are shown as input fields. The primary key field is read-only.
+3. Click **Save Changes** to apply the update.
+
+**To delete a row:**
+1. Click the trash icon. An inline confirmation replaces the icons.
+2. Click **Confirm** to delete, or **✕** to cancel.
+
+### Inserting rows
+
+Click **Add Row** in the table toolbar to open the Add Row dialog. Fill in values for each column. Auto-increment primary key fields are disabled and labelled **auto**. Click **Insert Row** to save.
+
+### Exporting a table as SQL
+
+Click **Export SQL** in the table toolbar. A `.sql` dump of the selected table is streamed directly to your browser.
+
+### Single-table optimization
+
+You can optimize individual tables by using the **Optimize All** button in the page header, which runs `OPTIMIZE TABLE` on every table in one request.
+
+## Search & Replace tab
+
+The Search & Replace tool finds and replaces text across all database tables. It handles PHP serialized data correctly — string lengths in serialized arrays and objects are recalculated automatically after replacement, so the data remains valid.
+
+<Steps>
+  <Step title="Enter search and replace terms">
+    Fill in the **Search for** and **Replace with** fields. The replace field can be left blank to delete the search string.
+  </Step>
+  <Step title="Configure options">
+    - **Dry run** (default: on) — previews how many replacements would be made per table without writing any changes.
+    - **Case insensitive** — matches regardless of letter case.
+  </Step>
+  <Step title="Preview with dry run">
+    Click **Preview Changes** while dry run is enabled. The results card shows the number of potential replacements per table.
+  </Step>
+  <Step title="Run the replacement">
+    Disable dry run, then click **Run Search & Replace**. Results are shown with a per-table breakdown and a success confirmation.
+  </Step>
+</Steps>
+
+<Warning>
+  Search & Replace writes directly to the database. Always run a dry-run preview first. Take a database backup before running a large replacement across production data.
+</Warning>
+
+<Tip>
+  Use Search & Replace when migrating a site to a new domain. Replace the old URL with the new URL — serialized data in `wp_options` and `wp_postmeta` is updated safely.
+</Tip>
+
+## SQL Query tab
+
+The SQL Query Runner lets you execute read-only SQL statements directly against the database.
+
+<Steps>
+  <Step title="Write your query">
+    Enter a SQL statement in the text area. The default example is `SELECT * FROM wp_options LIMIT 10`.
+  </Step>
+  <Step title="Run the query">
+    Click **Run Query**. Results are displayed in a formatted table showing all returned columns and rows. The header shows the total row count returned.
+  </Step>
+</Steps>
+
+### Allowed statement types
+
+Only read-only statements are accepted:
+
+```sql
+SELECT ...
+SHOW ...
+DESCRIBE ...
+EXPLAIN ...
+```
+
+<Warning>
+  Write operations (`INSERT`, `UPDATE`, `DELETE`, `DROP`, `ALTER`, etc.) are blocked at the API level and will return an error. Use the **Table Data** tab to insert, edit, or delete individual rows via the UI.
+</Warning>
+
+## REST API endpoints
+
+```http
+GET    /wp-json/wp-manager-pro/v1/database/tables
+GET    /wp-json/wp-manager-pro/v1/database/table-data
+POST   /wp-json/wp-manager-pro/v1/database/row
+PUT    /wp-json/wp-manager-pro/v1/database/row
+DELETE /wp-json/wp-manager-pro/v1/database/row
+GET    /wp-json/wp-manager-pro/v1/database/export
+POST   /wp-json/wp-manager-pro/v1/database/search-replace
+POST   /wp-json/wp-manager-pro/v1/database/optimize
+POST   /wp-json/wp-manager-pro/v1/database/query
+```

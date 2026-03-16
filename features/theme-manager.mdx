@@ -1,0 +1,125 @@
+---
+title: Theme Manager
+description: Browse, activate, update, export, and version-manage WordPress themes, including child theme relationships.
+---
+
+The Theme Manager lets you view all installed themes with their screenshots, activate a theme, delete inactive themes, install new themes from WordPress.org, upload theme ZIP files, and roll back to any prior version — all from one screen.
+
+## Overview
+
+The Theme Manager has three tabs:
+
+<CardGroup cols={3}>
+  <Card title="Installed" icon="paintbrush">
+    A card grid of all installed themes with screenshots. Activate, update, export, or delete from each card.
+  </Card>
+  <Card title="Search & Install" icon="magnifying-glass">
+    Search the WordPress.org theme repository and install with one click.
+  </Card>
+  <Card title="Upload ZIP" icon="upload">
+    Upload a `.zip` file to install or replace a theme. Supports drag-and-drop.
+  </Card>
+</CardGroup>
+
+A **Check Updates** button in the top-right triggers a fresh update check from WordPress.org without a page reload.
+
+## Installed themes
+
+Each installed theme is displayed as a card with:
+
+- A **screenshot** (16:9 aspect ratio) — a palette icon is shown when no screenshot is available
+- Theme name, version, and author
+- A **Child of `{parent}`** badge for child themes
+- An **Active** badge (blue ring around the card) for the current theme
+- An **Update** badge (amber) when a newer version is available
+
+### Activate a theme
+
+Click **Activate** on any inactive theme card to make it the active theme. The card gains a blue ring and the button label changes to **Active**.
+
+<Note>
+  Only one theme can be active at a time. Activating a new theme automatically deactivates the previous one.
+</Note>
+
+### One-click update
+
+When a theme has a pending update, an amber **Update** button appears on its card. Clicking it downloads and installs the latest version from WordPress.org.
+
+### Export as ZIP
+
+Click the download icon on any theme card to export the theme directory as a `.zip` file, streamed directly to your browser.
+
+### Delete a theme
+
+Click the trash icon on any **inactive** theme card. A confirmation dialog appears before deletion.
+
+<Warning>
+  The active theme cannot be deleted. The delete button is hidden for the currently active theme. Deletion is permanent.
+</Warning>
+
+## Version history
+
+Click the clock icon on any theme card to open the **Version History** dialog.
+
+<Steps>
+  <Step title="Open the dialog">
+    Click the history icon on the theme card. The dialog fetches all available versions from the WordPress.org API and marks the currently installed version.
+  </Step>
+  <Step title="Select a version">
+    Click **Install** next to any version to install it. You can downgrade or switch to any specific release.
+  </Step>
+  <Step title="Confirm">
+    The selected version is installed and the dialog closes. If the theme was active before, it remains active.
+  </Step>
+</Steps>
+
+<Warning>
+  Installing an older version downgrades the theme. Verify compatibility with your WordPress and PHP versions first.
+</Warning>
+
+## Search and install from WordPress.org
+
+<Steps>
+  <Step title="Go to the Search & Install tab">
+    Enter a search term and press Enter or click **Search**. Up to 12 results are returned from the WordPress.org API.
+  </Step>
+  <Step title="Review results">
+    Each result card shows the theme screenshot, name, author, star rating, and version.
+  </Step>
+  <Step title="Install">
+    Click **Install Theme** on any result card. The button changes to **Installed ✓** once installed. If an update is available for an already-installed theme, the button shows **Update** instead.
+  </Step>
+</Steps>
+
+## Upload a ZIP file
+
+<Steps>
+  <Step title="Go to the Upload ZIP tab">
+    Drag a `.zip` file onto the drop zone or click to browse. Only one file can be uploaded at a time.
+  </Step>
+  <Step title="Enable overwrite if needed">
+    Check **Overwrite if exists** to replace an existing theme with the same slug.
+  </Step>
+  <Step title="Install">
+    Click **Upload & Install Theme**. On success, the theme list refreshes automatically.
+  </Step>
+</Steps>
+
+## Child themes
+
+Child themes are identified automatically. Their cards display a **Child of `{parent}`** badge showing the parent theme name. Both parent and child themes are managed independently — you can activate, export, delete, and version-manage each separately.
+
+## REST API endpoints
+
+```http
+GET    /wp-json/wp-manager-pro/v1/themes
+POST   /wp-json/wp-manager-pro/v1/themes/activate
+DELETE /wp-json/wp-manager-pro/v1/themes/delete
+POST   /wp-json/wp-manager-pro/v1/themes/install
+GET    /wp-json/wp-manager-pro/v1/themes/search
+POST   /wp-json/wp-manager-pro/v1/themes/upload
+POST   /wp-json/wp-manager-pro/v1/themes/update
+POST   /wp-json/wp-manager-pro/v1/themes/install-version
+GET    /wp-json/wp-manager-pro/v1/themes/export
+GET    /wp-json/wp-manager-pro/v1/themes/download
+```

@@ -1,0 +1,105 @@
+---
+title: Code Snippets
+description: Run custom PHP, CSS, and JavaScript from the WordPress dashboard without editing theme or plugin files.
+---
+
+Code Snippets (new in v1.4.0) lets you add PHP, CSS, or JavaScript to your site through a safe, toggleable interface. Each snippet is stored in the `wp_wmp_snippets` database table and can be enabled or disabled individually without deletion.
+
+<Warning>
+PHP snippets execute on every page load via `eval()`. Only enable code you fully trust. If a PHP snippet causes a fatal error, disable it by setting `enabled = 0` directly in the `wp_wmp_snippets` table.
+</Warning>
+
+## How snippets run
+
+| Type | Hook | Effect |
+|---|---|---|
+| PHP | `init` (priority 1) | Runs on every front-end and admin request |
+| CSS | `wp_head` | Output as an inline `<style>` block in the `<head>` |
+| JavaScript | `wp_footer` | Output as an inline `<script>` block before `</body>` |
+
+## Creating a snippet
+
+<Steps>
+  <Step title="Open Code Snippets">
+    Click **Code Snippets** in the WP Manager Pro sidebar.
+  </Step>
+  <Step title="Click New Snippet">
+    Click the **New Snippet** button in the top-right corner of the page.
+  </Step>
+  <Step title="Fill in the details">
+    Enter a **Title** (required) and an optional **Description**. Select the **Type**: PHP, CSS, or JavaScript.
+  </Step>
+  <Step title="Write the code">
+    The Monaco Editor opens with syntax highlighting for the selected language. Write or paste your code.
+  </Step>
+  <Step title="Save and enable">
+    Click **Create Snippet**. The snippet is saved in a disabled state. Toggle the switch on the snippet card to enable it.
+  </Step>
+</Steps>
+
+## Monaco Editor
+
+The create and edit dialog uses the Monaco Editor (the same engine that powers VS Code). Syntax highlighting adjusts automatically when you change the snippet type:
+
+- PHP → `php` language mode
+- CSS → `css` language mode
+- JavaScript → `javascript` language mode
+
+## Managing snippets
+
+Each snippet card on the main list shows:
+
+- An **enable/disable toggle** — changes take effect on the next page load
+- A **type badge** (PHP / CSS / JS)
+- An **Active** badge when enabled
+- A truncated code preview
+- The last-updated timestamp
+- **Edit** and **Delete** icon buttons
+
+## Code examples
+
+### PHP — redirect a specific page
+
+```php
+// Redirect /old-about to /about
+add_action( 'template_redirect', function() {
+    if ( is_page( 'old-about' ) ) {
+        wp_redirect( home_url( '/about/' ), 301 );
+        exit;
+    }
+} );
+```
+
+### CSS — hide the admin bar on the front end
+
+```css
+/* Hide the WP admin bar for all logged-in users on the front end */
+#wpadminbar {
+    display: none !important;
+}
+
+html[lang] {
+    margin-top: 0 !important;
+}
+```
+
+### JavaScript — add Google Analytics (GA4)
+
+```javascript
+// Google Analytics 4 — replace G-XXXXXXXXXX with your Measurement ID
+(function() {
+    var script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX';
+    document.head.appendChild(script);
+
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+})();
+```
+
+<Tip>
+Disabling a snippet is always preferable to deleting it. A disabled snippet stays in the database and can be re-enabled at any time without re-entering the code.
+</Tip>

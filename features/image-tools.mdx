@@ -1,0 +1,217 @@
+---
+title: 'Image Tools'
+description: 'Control WebP and AVIF conversion, set image dimensions and quality, manage SVG uploads, regenerate thumbnails, and generate server config snippets.'
+---
+
+Image Tools centralises every image-processing setting in WordPress — from upload-time conversion to bulk batch processing and server-level delivery configuration.
+
+## Server support status
+
+The top of the page shows four status cards indicating what your server supports:
+
+<CardGroup cols={4}>
+  <Card title="GD Library">
+    PHP's built-in image processing extension. Required for WebP conversion when ImageMagick is absent.
+  </Card>
+  <Card title="ImageMagick">
+    Optional higher-quality image library. Preferred over GD when available.
+  </Card>
+  <Card title="WebP Support">
+    Whether GD or ImageMagick can encode WebP. Required before enabling WebP conversion.
+  </Card>
+  <Card title="AVIF Support">
+    Requires PHP 8.1+ with GD `imageavif` function, or ImageMagick compiled with the AVIF codec.
+  </Card>
+</CardGroup>
+
+Settings that depend on unsupported capabilities are automatically disabled.
+
+## Image settings
+
+### WebP conversion on upload
+
+Toggle **Convert to WebP on Upload** to automatically convert every uploaded JPEG, PNG, or GIF to WebP at upload time.
+
+<Note>
+Requires GD with WebP support or ImageMagick. The status card at the top confirms availability.
+</Note>
+
+### AVIF uploads
+
+Toggle **Allow AVIF Uploads** to register the `image/avif` MIME type so WordPress accepts `.avif` files in the media library.
+
+<Note>
+Requires PHP 8.1+ with GD (`imageavif` function) or ImageMagick with the AVIF codec.
+</Note>
+
+### Maximum image dimensions
+
+Set a **Max Width** and **Max Height** in pixels. Uploaded images whose dimensions exceed either value are automatically resized down while preserving aspect ratio. Set either field to `0` to disable that dimension limit.
+
+### JPEG quality
+
+The **JPEG Quality** slider controls the compression level for JPEG images processed by WordPress. The range is 10–100; the default is `82`. Lower values produce smaller files with more visible compression artifacts; higher values preserve detail at the cost of file size.
+
+### Saving settings
+
+Click **Save Settings** after adjusting any combination of the above fields.
+
+## Thumbnail sizes
+
+The **Registered Thumbnail Sizes** card lists every image size registered by WordPress core, the active theme, and any plugins — including the internal key, display name, pixel dimensions, and whether the size uses hard cropping.
+
+## WebP delivery options
+
+### Serve WebP automatically
+
+When **Serve WebP Automatically** is enabled, WP Manager Pro hooks into `wp_get_attachment_url` to rewrite image URLs for browsers that declare `Accept: image/webp`. On Apache, it also writes rewrite rules to `wp-content/uploads/.htaccess` so the substitution happens at the server level with no PHP overhead per request.
+
+<Note>
+**Nginx:** The PHP filter runs as a fallback. For server-level performance on Nginx, add the equivalent rewrite rule from the Server Config Generator tab to your Nginx configuration.
+</Note>
+
+### Replace original with WebP
+
+When **Replace Original with WebP** is enabled, the original JPEG/PNG file is deleted after conversion and the attachment metadata is updated to point to the `.webp` file. This applies to both upload-time conversion and the batch converter.
+
+<Warning>
+Replacing originals is irreversible. Ensure you have a backup before enabling this option and running a batch conversion.
+</Warning>
+
+### Auto-delete sidecar files
+
+When an attachment is deleted from the WordPress media library, WP Manager Pro automatically deletes any `.webp` and `.avif` sidecar files that were generated alongside it.
+
+You can also delete all converted sidecars for a format at once using the **delete** button next to each format in the Batch Convert section.
+
+## SVG support
+
+WordPress does not allow SVG uploads by default because malicious SVGs can embed scripts. WP Manager Pro adds SVG support with server-side sanitization.
+
+### Enabling SVG uploads
+
+Toggle **Allow SVG Uploads** to register the `image/svg+xml` MIME type. Then check which roles are permitted to upload SVGs:
+
+| Role | Recommended |
+|---|---|
+| Administrator | Yes (shown as recommended) |
+| Editor | Optional |
+| Author | Use with caution |
+
+### Sanitization
+
+Every SVG uploaded through WordPress is sanitized server-side before being saved. The sanitizer strips:
+
+- `<script>` elements
+- `on*` event attributes (e.g. `onclick`, `onload`)
+- `javascript:` href values
+- `<foreignObject>` elements
+- `<base>` elements
+
+<Warning>
+Restrict SVG uploads to the minimum set of trusted roles. Even with sanitization in place, SVGs should not be treated as safe binary images.
+</Warning>
+
+## Regenerate thumbnails
+
+Click **Regenerate All Thumbnails** to recreate every registered image size for every attachment in the media library. This is necessary after:
+
+- Changing the max dimensions setting
+- Switching themes that register different thumbnail sizes
+- Adding a new image size via a plugin
+
+<Note>
+Regeneration can take a long time on sites with many images. Do not close the browser tab while it is running.
+</Note>
+
+## Batch convert existing images
+
+The **Batch Convert Existing Images** section lets you convert your existing media library to WebP or AVIF without re-uploading.
+
+For each format, the card shows:
+- How many images have already been converted
+- How many remain
+
+Click **Convert to WebP** or **Convert to AVIF** to start. A progress bar shows `done / total` and updates after each batch of 10. Click **Stop Conversion** to abort mid-run.
+
+If **Replace Original with WebP** is enabled (see above), the batch run will also delete each original file after converting it.
+
+To undo a batch conversion without deleting originals, click the trash icon next to the format to delete all generated sidecar files for that format.
+
+## Server Config Generator
+
+The **Server Config Generator** provides copy-ready configuration snippets for both Nginx and Apache. Select your server type from the tab selector.
+
+<Tabs>
+  <Tab title="Nginx">
+    Three snippets are available:
+
+    **WebP Serving** — add inside your `server {}` block:
+
+    ```nginx
+    location ~* \.(jpe?g|png|gif|bmp|tiff?)$ {
+        add_header Vary Accept;
+        try_files $uri.webp $uri =404;
+    }
+    ```
+
+    **Security Headers** — add inside `server {}` or `location /`:
+
+    ```nginx
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    ```
+
+    **Browser Cache Rules** — cache static assets for one year:
+
+    ```nginx
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+    ```
+  </Tab>
+  <Tab title="Apache">
+    Three `.htaccess` snippets are available:
+
+    **WebP Serving** — WP Manager Pro writes this automatically when *Serve WebP* is enabled. Add manually if needed:
+
+    ```apache
+    RewriteEngine On
+    RewriteCond %{HTTP_ACCEPT} image/webp
+    RewriteCond %{REQUEST_FILENAME} \.(jpe?g|png|gif|bmp|tiff?)$
+    RewriteCond %{REQUEST_FILENAME}\.webp -f
+    RewriteRule ^ %{REQUEST_URI}.webp [L,T=image/webp]
+    ```
+
+    **Security Headers** — inside `<IfModule mod_headers.c>`:
+
+    ```apache
+    <IfModule mod_headers.c>
+        Header always set X-Content-Type-Options "nosniff"
+        Header always set X-Frame-Options "SAMEORIGIN"
+        Header always set X-XSS-Protection "1; mode=block"
+        Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    </IfModule>
+    ```
+
+    **Browser Cache Rules** — inside `<IfModule mod_expires.c>`:
+
+    ```apache
+    <IfModule mod_expires.c>
+        ExpiresActive On
+        ExpiresByType image/jpeg "access plus 1 year"
+        ExpiresByType image/webp "access plus 1 year"
+        ExpiresByType image/png  "access plus 1 year"
+        ExpiresByType text/css   "access plus 1 month"
+        ExpiresByType application/javascript "access plus 1 month"
+    </IfModule>
+    ```
+  </Tab>
+</Tabs>
+
+Click the **Copy** button next to any snippet to copy it to the clipboard.

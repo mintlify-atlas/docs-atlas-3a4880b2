@@ -1,0 +1,102 @@
+---
+title: 'Reset'
+description: 'Preview content counts and execute a selective site reset to delete posts, pages, comments, media, or non-admin users.'
+---
+
+<Warning>
+  The `POST /reset/execute` endpoint permanently deletes content. This action cannot be undone. Always back up your site before proceeding.
+</Warning>
+
+<Info>
+  All endpoints require a valid WordPress nonce in the `X-WP-Nonce` header and the `manage_options` capability.
+</Info>
+
+**Base URL:** `{site_url}/wp-json/wp-manager-pro/v1`
+
+---
+
+## GET /reset/status
+
+Returns a live count of content that would be affected by a reset. Use this before executing a reset to confirm the scope.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/reset/status" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="posts" type="number">
+  Number of posts (post type `post`, all statuses).
+</ResponseField>
+
+<ResponseField name="pages" type="number">
+  Number of pages (post type `page`, all statuses).
+</ResponseField>
+
+<ResponseField name="comments" type="number">
+  Total comment count across all statuses.
+</ResponseField>
+
+<ResponseField name="media" type="number">
+  Number of media attachments.
+</ResponseField>
+
+<ResponseField name="users_non_admin" type="number">
+  Number of users without the `administrator` role.
+</ResponseField>
+
+---
+
+## POST /reset/execute
+
+Permanently deletes the specified content types. All deletions use WordPress core functions (`wp_delete_post`, `wp_delete_attachment`, `wp_delete_user`). Plugin settings, admin accounts, and site configuration are not affected.
+
+<Warning>
+  You must pass `"confirm": true` in the request body. Without it the endpoint returns HTTP 400. The current admin user is never deleted even if `users_non_admin` is included.
+</Warning>
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/reset/execute" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"types": ["posts", "comments"], "confirm": true}'
+```
+
+### Parameters
+
+<ParamField body="types" type="string[]" required>
+  Array of content types to delete. Valid values:
+  - `posts` — all posts (post type `post`)
+  - `pages` — all pages
+  - `comments` — all comments and comment meta
+  - `media` — all attachments and their files
+  - `users_non_admin` — all non-administrator users (content reassigned to the first admin)
+</ParamField>
+
+<ParamField body="confirm" type="boolean" required>
+  Must be `true`. The endpoint returns HTTP 400 if this field is absent or false.
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether the reset completed.
+</ResponseField>
+
+<ResponseField name="results" type="object">
+  Map of content type to the number of items deleted. Only types that were requested appear in this object.
+
+  <Expandable title="example results object">
+    ```json
+    {
+      "posts": 42,
+      "comments": 15
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>

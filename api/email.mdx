@@ -1,0 +1,190 @@
+---
+title: 'Email / SMTP'
+description: 'Configure SMTP settings, send test emails, and view the email delivery log.'
+---
+
+<Info>
+  All endpoints require a valid WordPress nonce in the `X-WP-Nonce` header and the `manage_options` capability. Added in v1.4.0.
+</Info>
+
+<Note>
+  SMTP settings are applied via the `phpmailer_init` hook. The password field is masked in GET responses — submitting the masked value (`••••••••`) in a POST preserves the stored password.
+</Note>
+
+**Base URL:** `{site_url}/wp-json/wp-manager-pro/v1`
+
+---
+
+## GET /email/settings
+
+Returns the current SMTP configuration. The password is always masked.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/email/settings" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="settings" type="object">
+  <Expandable title="settings properties">
+    <ResponseField name="enabled" type="boolean">Whether SMTP is active.</ResponseField>
+    <ResponseField name="host" type="string">SMTP server hostname.</ResponseField>
+    <ResponseField name="port" type="number">SMTP port (e.g. `587`).</ResponseField>
+    <ResponseField name="username" type="string">SMTP authentication username.</ResponseField>
+    <ResponseField name="password" type="string">Masked password (`••••••••`).</ResponseField>
+    <ResponseField name="encryption" type="string">`none`, `ssl`, or `tls`.</ResponseField>
+    <ResponseField name="from_email" type="string">Sender email address.</ResponseField>
+    <ResponseField name="from_name" type="string">Sender display name.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## POST /email/settings
+
+Save SMTP configuration.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/email/settings" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"enabled": true, "host": "smtp.mailgun.org", "port": 587, "username": "postmaster@example.com", "password": "secret", "encryption": "tls", "from_email": "hello@example.com", "from_name": "My Site"}'
+```
+
+### Parameters
+
+<ParamField body="enabled" type="boolean">
+  Enable or disable SMTP delivery.
+</ParamField>
+
+<ParamField body="host" type="string">
+  SMTP server hostname.
+</ParamField>
+
+<ParamField body="port" type="number" default="587">
+  SMTP port.
+</ParamField>
+
+<ParamField body="username" type="string">
+  SMTP authentication username.
+</ParamField>
+
+<ParamField body="password" type="string">
+  SMTP password. Submit the masked value (`••••••••`) or `null` to keep the existing password.
+</ParamField>
+
+<ParamField body="encryption" type="string" default="tls">
+  Encryption method. Accepted values: `none`, `ssl`, `tls`.
+</ParamField>
+
+<ParamField body="from_email" type="string">
+  Sender email address for all outgoing mail.
+</ParamField>
+
+<ParamField body="from_name" type="string">
+  Sender display name.
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether settings were saved.
+</ResponseField>
+
+<ResponseField name="settings" type="object">
+  The saved settings object (password masked).
+</ResponseField>
+
+---
+
+## POST /email/test
+
+Send a test email using the current SMTP configuration.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/email/test" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"to": "admin@example.com"}'
+```
+
+### Parameters
+
+<ParamField body="to" type="string" required>
+  Recipient email address for the test message.
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether the test email was sent successfully.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation or error description.
+</ResponseField>
+
+---
+
+## GET /email/log
+
+Returns paginated email log entries.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/email/log?page=1&per_page=25" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Parameters
+
+<ParamField query="page" type="number" default="1">
+  Page number.
+</ParamField>
+
+<ParamField query="per_page" type="number" default="50">
+  Results per page (10–200).
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by delivery status: `sent` or `failed`.
+</ParamField>
+
+### Response
+
+<ResponseField name="emails" type="array">
+  Array of log entries, each with `id`, `to_email`, `subject`, `message`, `headers`, `status` (`sent`/`failed`), `error`, and `created_at`.
+</ResponseField>
+
+<ResponseField name="total" type="number">
+  Total matching log entries.
+</ResponseField>
+
+<ResponseField name="page" type="number">
+  Current page.
+</ResponseField>
+
+<ResponseField name="per_page" type="number">
+  Results per page.
+</ResponseField>
+
+<ResponseField name="total_pages" type="number">
+  Total pages.
+</ResponseField>
+
+---
+
+## DELETE /email/log/clear
+
+Truncate the email log table.
+
+```bash
+curl -X DELETE "https://yoursite.com/wp-json/wp-manager-pro/v1/email/log/clear" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether the log was cleared.
+</ResponseField>

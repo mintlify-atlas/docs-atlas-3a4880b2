@@ -1,0 +1,326 @@
+---
+title: 'Media'
+description: 'Analyze and clean up the WordPress media library — orphaned files, unused attachments, duplicates, and compression.'
+---
+
+<Info>
+  All endpoints require a valid WordPress nonce in the `X-WP-Nonce` header and the `manage_options` capability. Added in v2.2.0.
+</Info>
+
+**Base URL:** `{site_url}/wp-json/wp-manager-pro/v1`
+
+---
+
+## GET /media/overview
+
+Returns high-level statistics about the media library. Counts are approximate (capped scans) for performance.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/media/overview" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="total_attachments" type="number">
+  Total number of attachment posts in the database.
+</ResponseField>
+
+<ResponseField name="total_size" type="number">
+  Total size of the uploads directory in bytes.
+</ResponseField>
+
+<ResponseField name="total_size_human" type="string">
+  Human-readable uploads directory size (e.g. `234 MB`).
+</ResponseField>
+
+<ResponseField name="orphaned_count" type="number">
+  Number of attachments whose physical file is missing (scanned up to 200).
+</ResponseField>
+
+<ResponseField name="unused_count" type="number">
+  Number of unattached, unreferenced attachments (scanned up to 500).
+</ResponseField>
+
+<ResponseField name="duplicate_groups" type="number">
+  Number of duplicate file groups by MD5 hash (scanned up to 300).
+</ResponseField>
+
+---
+
+## GET /media/orphaned
+
+Lists attachments whose physical file is missing from disk.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/media/orphaned" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="total" type="number">
+  Total number of orphaned attachments found.
+</ResponseField>
+
+<ResponseField name="items" type="array">
+  <Expandable title="item properties">
+    <ResponseField name="id" type="number">Attachment post ID.</ResponseField>
+    <ResponseField name="title" type="string">Attachment title.</ResponseField>
+    <ResponseField name="mime_type" type="string">MIME type.</ResponseField>
+    <ResponseField name="date" type="string">Upload date.</ResponseField>
+    <ResponseField name="url" type="string">Attachment GUID URL.</ResponseField>
+    <ResponseField name="file_path" type="string">Expected file path on disk.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## DELETE /media/orphaned
+
+Bulk delete orphaned attachments by ID. Uses `wp_delete_attachment` with `force_delete = true`.
+
+```bash
+curl -X DELETE "https://yoursite.com/wp-json/wp-manager-pro/v1/media/orphaned" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"ids": [42, 57, 88]}'
+```
+
+### Parameters
+
+<ParamField body="ids" type="number[]" required>
+  Array of attachment post IDs to delete.
+</ParamField>
+
+### Response
+
+<ResponseField name="deleted" type="number">
+  Number of attachments successfully deleted.
+</ResponseField>
+
+<ResponseField name="errors" type="array">
+  IDs that failed to delete.
+</ResponseField>
+
+---
+
+## GET /media/unused
+
+Lists attachments with no parent post, not used as a featured image, and not referenced in any published post content.
+
+<Note>
+  Content scanning is approximate — it performs a `LIKE` search on `post_content` using the filename. Some false positives are possible.
+</Note>
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/media/unused" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="total" type="number">
+  Total unused attachments found.
+</ResponseField>
+
+<ResponseField name="items" type="array">
+  <Expandable title="item properties">
+    <ResponseField name="id" type="number">Attachment post ID.</ResponseField>
+    <ResponseField name="title" type="string">Attachment title.</ResponseField>
+    <ResponseField name="mime_type" type="string">MIME type.</ResponseField>
+    <ResponseField name="date" type="string">Upload date.</ResponseField>
+    <ResponseField name="url" type="string">Attachment URL.</ResponseField>
+    <ResponseField name="file_size" type="number">File size in bytes.</ResponseField>
+    <ResponseField name="file_size_human" type="string">Human-readable file size.</ResponseField>
+    <ResponseField name="thumbnail" type="string">Thumbnail URL, or empty string if unavailable.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## DELETE /media/unused
+
+Bulk delete unused attachments by ID.
+
+```bash
+curl -X DELETE "https://yoursite.com/wp-json/wp-manager-pro/v1/media/unused" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"ids": [101, 102, 103]}'
+```
+
+### Parameters
+
+<ParamField body="ids" type="number[]" required>
+  Array of attachment post IDs to delete.
+</ParamField>
+
+### Response
+
+<ResponseField name="deleted" type="number">
+  Number of attachments deleted.
+</ResponseField>
+
+<ResponseField name="errors" type="array">
+  IDs that failed to delete.
+</ResponseField>
+
+---
+
+## GET /media/duplicates
+
+Groups media library attachments by MD5 file hash and returns groups with two or more copies, sorted by wasted space descending.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/media/duplicates" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="groups" type="array">
+  <Expandable title="group properties">
+    <ResponseField name="hash" type="string">MD5 hash shared by all files in the group.</ResponseField>
+    <ResponseField name="count" type="number">Number of duplicate copies.</ResponseField>
+    <ResponseField name="wasted_size" type="number">Bytes wasted by duplicates (total minus the original).</ResponseField>
+    <ResponseField name="wasted_size_human" type="string">Human-readable wasted size.</ResponseField>
+    <ResponseField name="items" type="array">Array of attachment objects with `id`, `title`, `mime_type`, `date`, `url`, `file_path`, `file_size`, `file_size_human`, and `thumbnail`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="total_groups" type="number">
+  Number of duplicate groups found.
+</ResponseField>
+
+<ResponseField name="total_wasted" type="number">
+  Total wasted bytes across all groups.
+</ResponseField>
+
+<ResponseField name="total_wasted_human" type="string">
+  Human-readable total wasted size.
+</ResponseField>
+
+<ResponseField name="scanned" type="number">
+  Number of attachments scanned.
+</ResponseField>
+
+---
+
+## DELETE /media/duplicate
+
+Delete a single duplicate attachment. The oldest copy (lowest ID) in each group is considered the original and should be kept.
+
+```bash
+curl -X DELETE "https://yoursite.com/wp-json/wp-manager-pro/v1/media/duplicate" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"id": 204}'
+```
+
+### Parameters
+
+<ParamField body="id" type="number" required>
+  Attachment post ID to delete.
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether the attachment was deleted.
+</ResponseField>
+
+<ResponseField name="deleted_id" type="number">
+  The ID that was deleted.
+</ResponseField>
+
+---
+
+## GET /media/compress-candidates
+
+Lists JPEG and PNG attachments that may benefit from re-compression, including their current file sizes.
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/media/compress-candidates" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+### Response
+
+<ResponseField name="total" type="number">
+  Total JPEG/PNG attachments in the library.
+</ResponseField>
+
+<ResponseField name="items" type="array">
+  <Expandable title="item properties">
+    <ResponseField name="id" type="number">Attachment post ID.</ResponseField>
+    <ResponseField name="title" type="string">Attachment title.</ResponseField>
+    <ResponseField name="mime_type" type="string">`image/jpeg` or `image/png`.</ResponseField>
+    <ResponseField name="date" type="string">Upload date.</ResponseField>
+    <ResponseField name="url" type="string">Attachment URL.</ResponseField>
+    <ResponseField name="file_size" type="number">Current file size in bytes.</ResponseField>
+    <ResponseField name="file_size_human" type="string">Human-readable file size.</ResponseField>
+    <ResponseField name="thumbnail" type="string">Thumbnail URL.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## POST /media/compress
+
+Re-compress a single JPEG or PNG attachment in-place using WordPress's image editor.
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/media/compress" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"id": 77, "quality": 75}'
+```
+
+### Parameters
+
+<ParamField body="id" type="number" required>
+  Attachment post ID to compress.
+</ParamField>
+
+<ParamField body="quality" type="number" default="82">
+  Compression quality (1–100). Applies to JPEG; for PNG it controls zlib compression.
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Whether compression succeeded.
+</ResponseField>
+
+<ResponseField name="id" type="number">
+  The attachment ID that was compressed.
+</ResponseField>
+
+<ResponseField name="before_size" type="number">
+  File size before compression, in bytes.
+</ResponseField>
+
+<ResponseField name="after_size" type="number">
+  File size after compression, in bytes.
+</ResponseField>
+
+<ResponseField name="before_size_human" type="string">
+  Human-readable before size.
+</ResponseField>
+
+<ResponseField name="after_size_human" type="string">
+  Human-readable after size.
+</ResponseField>
+
+<ResponseField name="saved" type="number">
+  Bytes saved.
+</ResponseField>
+
+<ResponseField name="saved_human" type="string">
+  Human-readable bytes saved.
+</ResponseField>
+
+<ResponseField name="saved_pct" type="number">
+  Percentage saved (0–100).
+</ResponseField>

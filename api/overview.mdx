@@ -1,0 +1,180 @@
+---
+title: 'API overview'
+description: 'Authentication, base URL, error handling, and a complete index of all WP Manager Pro REST API endpoints.'
+---
+
+## Base URL
+
+All WP Manager Pro API endpoints are served under the WordPress REST API namespace `wp-manager-pro/v1`:
+
+```
+{site_url}/wp-json/wp-manager-pro/v1
+```
+
+Replace `{site_url}` with your WordPress site's URL, e.g. `https://yoursite.com/wp-json/wp-manager-pro/v1`.
+
+<Note>
+If your site uses plain (non-pretty) permalinks, the base URL becomes `{site_url}/?rest_route=/wp-manager-pro/v1`. Enable pretty permalinks under **Settings → Permalinks** to use the `/wp-json/` path.
+</Note>
+
+## Authentication
+
+Every request must include a valid WordPress nonce in the `X-WP-Nonce` header.
+
+```
+X-WP-Nonce: YOUR_NONCE
+```
+
+### Getting the nonce
+
+When the WP Manager Pro admin page loads, WordPress injects a global `wpManagerPro` object into the page with the nonce already set:
+
+```javascript
+// Available on every WP Manager Pro admin page
+const nonce = window.wpManagerPro.nonce;
+```
+
+The plugin uses this internally for all API calls from its React frontend. If you are making requests from outside the admin page (e.g. a custom script or an external tool), use `wp_create_nonce('wp_rest')` in PHP to generate a nonce for the currently authenticated user.
+
+<Tip>
+The built-in **REST API Tester** (Developer → REST API Tester tab) is pre-authenticated with the page nonce and is the easiest way to explore the API interactively.
+</Tip>
+
+## Authorization
+
+All endpoints require the `manage_options` capability, which is held by WordPress Administrators. Any request made by a user without this capability returns a `403 Forbidden` error.
+
+```json
+{
+  "code": "rest_forbidden",
+  "message": "Sorry, you are not allowed to do that.",
+  "data": { "status": 403 }
+}
+```
+
+## Error responses
+
+Errors are returned in the standard `WP_Error` / WordPress REST API format:
+
+```json
+{
+  "code": "error_code",
+  "message": "Human-readable error description.",
+  "data": { "status": 400 }
+}
+```
+
+Common HTTP status codes:
+
+| Status | Meaning |
+|--------|---------|
+| `200` | Success |
+| `201` | Created (e.g. new note) |
+| `400` | Bad request — missing or invalid parameter |
+| `403` | Forbidden — missing nonce, invalid nonce, or insufficient capability |
+| `404` | Resource not found |
+| `409` | Conflict — e.g. filename already exists |
+| `500` | Server error |
+
+## Making requests
+
+### curl examples
+
+GET request:
+
+```bash
+curl -X GET "https://yoursite.com/wp-json/wp-manager-pro/v1/dashboard" \
+  -H "X-WP-Nonce: YOUR_NONCE"
+```
+
+POST request with JSON body:
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/settings" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"plugin_name": "My Plugin", "menu_label": "My Menu"}'
+```
+
+DELETE request with a body:
+
+```bash
+curl -X DELETE "https://yoursite.com/wp-json/wp-manager-pro/v1/plugins/delete" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -H "Content-Type: application/json" \
+  -d '{"plugin": "akismet/akismet.php"}'
+```
+
+File upload (multipart):
+
+```bash
+curl -X POST "https://yoursite.com/wp-json/wp-manager-pro/v1/plugins/upload" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -F "file=@/path/to/plugin.zip"
+```
+
+## Rate limiting
+
+WP Manager Pro does not impose additional rate limits beyond what WordPress itself enforces. Heavy operations (search-replace, thumbnail regeneration, batch image conversion) are designed to be called once per user action and may take several seconds to complete depending on your site's database and file sizes.
+
+## Endpoint groups
+
+### Core
+
+| Method | Endpoint | Page |
+|--------|----------|------|
+| `GET` | `/dashboard` | [Dashboard](/api/dashboard) |
+| `GET` | `/system` | [System](/api/system) |
+| `GET` | `/settings` | [Settings](/api/settings) |
+| `POST` | `/settings` | [Settings](/api/settings) |
+
+### Content
+
+| Method | Endpoint | Page |
+|--------|----------|------|
+| `GET` | `/plugins` | [Plugins](/api/plugins) |
+| `POST` | `/plugins/activate` | [Plugins](/api/plugins) |
+| `POST` | `/plugins/deactivate` | [Plugins](/api/plugins) |
+| `DELETE` | `/plugins/delete` | [Plugins](/api/plugins) |
+| `POST` | `/plugins/install` | [Plugins](/api/plugins) |
+| `GET` | `/plugins/search` | [Plugins](/api/plugins) |
+| `POST` | `/plugins/upload` | [Plugins](/api/plugins) |
+| `POST` | `/plugins/export` | [Plugins](/api/plugins) |
+| `GET` | `/plugins/download` | [Plugins](/api/plugins) |
+| `POST` | `/plugins/update` | [Plugins](/api/plugins) |
+| `POST` | `/plugins/install-version` | [Plugins](/api/plugins) |
+| `GET` | `/themes` | [Themes](/api/themes) |
+| `POST` | `/themes/activate` | [Themes](/api/themes) |
+| `DELETE` | `/themes/delete` | [Themes](/api/themes) |
+| `POST` | `/themes/install` | [Themes](/api/themes) |
+| `GET` | `/themes/search` | [Themes](/api/themes) |
+| `POST` | `/themes/upload` | [Themes](/api/themes) |
+| `POST` | `/themes/export` | [Themes](/api/themes) |
+| `GET` | `/themes/download` | [Themes](/api/themes) |
+| `POST` | `/themes/update` | [Themes](/api/themes) |
+| `POST` | `/themes/install-version` | [Themes](/api/themes) |
+| `GET` | `/files` | [Files](/api/files) |
+| `GET` | `/files/read` | [Files](/api/files) |
+| `POST` | `/files/write` | [Files](/api/files) |
+| `DELETE` | `/files/delete` | [Files](/api/files) |
+| `POST` | `/files/mkdir` | [Files](/api/files) |
+| `POST` | `/files/upload` | [Files](/api/files) |
+| `POST` | `/files/rename` | [Files](/api/files) |
+| `GET` | `/database/tables` | [Database](/api/database) |
+| `GET` | `/database/table-data` | [Database](/api/database) |
+| `POST` | `/database/search-replace` | [Database](/api/database) |
+| `POST` | `/database/optimize` | [Database](/api/database) |
+| `POST` | `/database/query` | [Database](/api/database) |
+| `POST` | `/database/row` | [Database](/api/database) |
+| `PUT` | `/database/row` | [Database](/api/database) |
+| `DELETE` | `/database/row` | [Database](/api/database) |
+| `GET` | `/database/export` | [Database](/api/database) |
+| `GET` | `/users` | [Users](/api/users) |
+| `POST` | `/users/change-role` | [Users](/api/users) |
+| `POST` | `/users/login-as` | [Users](/api/users) |
+| `DELETE` | `/users/delete` | [Users](/api/users) |
+| `POST` | `/users/rename` | [Users](/api/users) |
+| `GET` | `/notes` | [Notes](/api/notes) |
+| `POST` | `/notes` | [Notes](/api/notes) |
+| `PUT` | `/notes/{id}` | [Notes](/api/notes) |
+| `DELETE` | `/notes/{id}` | [Notes](/api/notes) |

@@ -1,0 +1,74 @@
+---
+title: Settings
+description: White-label branding, settings export/import, collapsible changelog, and FAQ — plugin configuration in one place.
+---
+
+The Settings page (new in v1.8.0) has four tabs: **Branding**, **Export / Import**, **Changelog**, and **FAQ**.
+
+---
+
+## Branding
+
+White-label WP Manager Pro so it appears under your agency's own identity in the WordPress admin.
+
+### Available fields
+
+| Field | Default | Description |
+|---|---|---|
+| Plugin Name | `WP Manager Pro` | Shown in the sidebar header |
+| Admin Menu Label | `WP Manager` | Text in the WordPress left-hand admin menu |
+| Custom Logo URL | *(none)* | Image displayed in the sidebar header in place of the default icon |
+
+### Selecting a logo from the Media Library
+
+Click **Select** next to the **Custom Logo URL** field to open the WordPress Media Library picker. Choose an existing image or upload a new one. The URL is populated automatically and a 28×28 px preview appears below the field.
+
+<Note>
+Changes to the **Admin Menu Label** take effect after saving and reloading the browser tab. The WordPress admin menu is rendered server-side on each page load.
+</Note>
+
+### Command Palette shortcut
+
+The **Command Palette Shortcut** selector lets you choose the keyboard shortcut that opens the global command palette:
+
+| Option | Notes |
+|---|---|
+| `⌘ Shift P` | Default — VS Code style, no conflict with WordPress |
+| `⌘ Shift K` | Alternative shift variant |
+| `⌘ K` | Same shortcut WordPress uses on admin pages — may conflict |
+
+The selected shortcut is saved to `localStorage` and takes effect immediately without a page reload.
+
+---
+
+## Export / Import
+
+Export and import plugin configuration as a JSON bundle.
+
+### Exporting settings
+
+Select the sections to include (Branding, Maintenance, SMTP / Email, Image Settings, Code Snippets, Redirects, Notes) and click **Export**. A JSON file named `wmp-settings-YYYY-MM-DD.json` is downloaded. The bundle is signed with an HMAC using the site's WordPress auth salt.
+
+### Importing settings
+
+Drag and drop the JSON file onto the import area, or click to browse. The plugin reads the bundle and shows a preview: export date, source site URL, plugin version, and which sections are present. Choose which sections to overwrite and click **Import**.
+
+<Warning>
+Importing from a different site shows a cross-site warning because the HMAC signature will not match. The import still proceeds — review the sections carefully before applying. The bundle may contain SMTP passwords in plain text; treat it as a sensitive file.
+</Warning>
+
+### WordPress XML export
+
+The **WordPress Content Export** section generates a standard WordPress XML (WXR) file containing your site content. Select the content type (All, Posts, Pages, Media, or a custom post type) and click **Export WordPress XML**.
+
+---
+
+## Changelog
+
+The **Changelog** tab shows the complete version history of WP Manager Pro as a collapsible accordion. The current version is expanded by default. Each entry lists the features, fixes, and improvements introduced in that version.
+
+---
+
+## FAQ
+
+The **FAQ** tab contains common questions and answers covering installation, backups, code snippets, security features, and more. A direct link at the bottom opens a new GitHub issue so you can report bugs or request features.

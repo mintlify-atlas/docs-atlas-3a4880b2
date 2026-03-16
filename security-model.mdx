@@ -1,0 +1,122 @@
+---
+title: 'Security model'
+description: 'How WP Manager Pro enforces authorization, validates inputs, and protects the filesystem and database.'
+---
+
+WP Manager Pro handles sensitive site operations — file editing, database access, user impersonation — from a single React interface. This page documents every security control the plugin enforces.
+
+## Authentication and authorization
+
+Every REST endpoint in the `wp-manager-pro/v1` namespace requires:
+
+1. **WordPress nonce validation** — the `X-WP-Nonce` header must contain a valid `wp_rest` nonce issued by WordPress for the current session.
+2. **`manage_options` capability** — the authenticated user must hold the `manage_options` capability. Any request from a lower-privileged user receives a `403 Forbidden` response before any controller logic runs.
+
+There is no separate API key or token system for the main REST API — authentication piggybacks entirely on WordPress's own session and nonce infrastructure.
+
+## File Manager
+
+<Warning>
+  The File Manager can read and write arbitrary files within the WordPress installation. These controls are the primary safeguards against misuse.
+</Warning>
+
+| Control | Implementation |
+|---|---|
+| **Path traversal prevention** | Every path is resolved with PHP `realpath()` before use. The resolved path must begin with `ABSPATH` — requests that escape the WordPress root are rejected with a 400 error. |
+| **Critical file write protection** | `wp-config.php`, `.htaccess`, and `index.php` cannot be deleted or renamed. The delete and rename endpoints check for these filenames explicitly before taking any action. |
+| **Read limited to text files** | The file read endpoint accepts only text-based extensions (PHP, JS, TS, CSS, HTML, JSON, SQL, YAML, MD, SVG, and others). Binary files are not returned. |
+| **2 MB read limit** | Files larger than 2 MB are not loaded into the editor. |
+
+## User Manager — Login As
+
+The Login As (admin impersonation) feature uses a token-based flow:
+
+- A token is generated with `wp_generate_password(32)` and stored via `set_transient()` with a **5-minute expiry**.
+- The token is **single-use** — it is deleted from transients on first consumption.
+- Only users with `manage_options` can generate a token.
+- The token is never reused; each impersonation session requires a new token.
+
+## Database Manager — SQL runner
+
+The query runner is **read-only**. The API endpoint validates the submitted SQL statement and accepts only the following command types:
+
+- `SELECT`
+- `SHOW`
+- `DESCRIBE`
+- `EXPLAIN`
+
+Any statement beginning with `INSERT`, `UPDATE`, `DELETE`, `DROP`, `ALTER`, `CREATE`, `TRUNCATE`, or other write commands is rejected before execution. For write operations, use the table data UI (insert/edit/delete row).
+
+## SVG sanitization
+
+When SVG uploads are enabled in Image Tools, every uploaded SVG file is sanitized server-side before being saved. The sanitizer strips:
+
+- `<script>` elements
+- `on*` event attributes (e.g. `onload`, `onerror`, `onclick`)
+- `javascript:` href values
+- `<foreignObject>` elements
+- `<base>` elements
+
+## User input sanitization
+
+All inputs received by REST controllers are sanitized before use or storage:
+
+| Function | Applied to |
+|---|---|
+| `sanitize_text_field()` | Text strings, slugs, names |
+| `absint()` | Integer values, IDs |
+| `sanitize_hex_color()` | Colour picker values |
+| `wp_kses_post()` | Rich text / HTML content |
+
+### Username rename
+
+The rename endpoint applies `sanitize_user()` and `validate_username()` to the new username before any database write. It also checks `username_exists()` to prevent conflicts, and blocks self-rename server-side.
+
+## Reset Tools
+
+The reset endpoint requires an explicit `confirm: true` flag in the request body. Without this flag the request is rejected regardless of other parameters. All deletions use WordPress core functions (`wp_delete_post`, `wp_delete_attachment`, `wp_delete_user`) — no raw SQL `DELETE` statements are used for content removal.
+
+## Security Suite features
+
+### Admin URL protection
+
+When enabled, direct GET requests to `wp-login.php` without the secret key are redirected to the homepage. POST requests (form submission) and password-reset flows are unaffected so that standard login still works via the secret slug.
+
+### Login Attempt Limiter
+
+- Hooks into WordPress's `authenticate` filter at **priority 30** — runs before WordPress's own authentication.
+- Failed attempts are counted per IP address using WordPress transients with IP-keyed lock keys.
+- When the configured maximum is exceeded, the IP is locked for the configured duration.
+- Lockout state is stored in transients, not in a separate table, so it survives caching layers that don't intercept transients.
+
+### IP Blocklist
+
+- Supports exact IP addresses and CIDR ranges (e.g. `10.0.0.0/24`).
+- CIDR matching uses a bitwise mask comparison in PHP — no external library required.
+- The blocklist check fires on the WordPress `init` hook **before any page output** is sent.
+- Blocked requests receive a `wp_die(403)` response.
+
+### Two-Factor Authentication (TOTP)
+
+The 2FA implementation is 100% native PHP with no Composer dependencies:
+
+| Component | Implementation |
+|---|---|
+| Secret generation | `random_bytes()` |
+| TOTP computation | `hash_hmac('sha1', ...)` per RFC 6238 |
+| Base32 encoding/decoding | Custom PHP implementation |
+| QR code | External image API (`api.qrserver.com`) |
+| Backup codes | 8 codes shown once; stored as **MD5 hashes** in user meta |
+
+<Info>
+  TOTP parameters: SHA1 algorithm, 6-digit codes, 30-second time window — compatible with Google Authenticator, Authy, and all standard TOTP apps.
+</Info>
+
+Per-user meta keys: `wmp_2fa_secret`, `wmp_2fa_enabled`, `wmp_2fa_backup_codes`.
+
+### Core file integrity
+
+- Fetches official MD5 checksums from `https://api.wordpress.org/core/checksums/1.0/?version=X&locale=Y`.
+- Compares every file in `wp-admin/` and `wp-includes/` against the expected hash.
+- `wp-content/` is excluded — it contains user content that legitimately differs.
+- Reports modified files (path, actual hash, expected hash, last modified date) and missing files.

@@ -1,0 +1,150 @@
+---
+title: 'Two-Factor Authentication'
+description: 'Add TOTP-based 2FA to your WordPress admin account. Compatible with Google Authenticator, Authy, and any RFC 6238-compliant app. No Composer dependencies required.'
+icon: 'smartphone'
+---
+
+The **Two-Factor** tab adds a time-based one-time password (TOTP) second factor to your WordPress admin account. The implementation is 100% native PHP — no Composer packages, no external libraries.
+
+## How it works
+
+WP Manager Pro implements TOTP following [RFC 6238](https://datatracker.ietf.org/doc/html/rfc6238) with these parameters:
+
+| Parameter | Value |
+|---|---|
+| Algorithm | SHA-1 |
+| Digits | 6 |
+| Period | 30 seconds |
+| Window tolerance | ±1 step (allows ±30 s clock skew) |
+
+The secret is a 20-byte (160-bit) random value encoded as a base32 string using a custom encoder built with `random_bytes`. The HMAC is computed with `hash_hmac('sha1', ...)` and truncated to 6 digits using the standard dynamic truncation algorithm defined in RFC 4226.
+
+### Backup codes
+
+When you verify your first code and activate 2FA, the server generates **8 one-time backup codes**. These are:
+- Shown to you **once** in the UI — they are not retrievable afterwards.
+- Stored as MD5 hashes in user meta (`wmp_2fa_backup_codes`).
+- Each code is consumed on use — once a code is spent it cannot be reused.
+
+<Warning>
+Save your backup codes immediately after activating 2FA. Store them in a password manager or print them. If you lose access to your authenticator app and have no backup codes, you will need to disable the `wmp_2fa_enabled` user meta directly in the database.
+</Warning>
+
+### Per-user scope
+
+2FA is configured independently for each WordPress user. Enabling or disabling it on your account has no effect on other administrators.
+
+---
+
+## How to enable 2FA
+
+<Steps>
+  <Step title="Install an authenticator app">
+    Install **Google Authenticator**, **Authy**, **1Password**, **Bitwarden**, or any TOTP-compatible app on your phone before you begin.
+  </Step>
+  <Step title="Open Security → Two-Factor">
+    In the WP Admin sidebar, click **WP Manager → Security**, then select the **Two-Factor** tab.
+  </Step>
+  <Step title="Click Set Up Two-Factor Auth">
+    Click the **Set Up Two-Factor Auth** button. The server generates a fresh secret and returns a QR code.
+  </Step>
+  <Step title="Scan the QR code">
+    Open your authenticator app and scan the QR code displayed on screen. The account will appear in your app as `{site-name}:{your-email}`.
+
+    If you cannot scan the QR code, click the **copy** button next to the base32 secret string and enter it manually in your app.
+  </Step>
+  <Step title="Enter the 6-digit code">
+    Your app will display a 6-digit code that refreshes every 30 seconds. Enter it into the verification field.
+  </Step>
+  <Step title="Click Verify & Enable">
+    Click **Verify & Enable**. If the code is correct, 2FA is activated and your 8 backup codes are displayed.
+  </Step>
+  <Step title="Save your backup codes">
+    Click **Copy All** and store the codes somewhere safe. They will not be shown again.
+  </Step>
+  <Step title="Click Done">
+    Click **Done** to return to the 2FA status view, which now shows a green confirmation banner.
+  </Step>
+</Steps>
+
+---
+
+## How to disable 2FA
+
+<Steps>
+  <Step title="Open Security → Two-Factor">
+    Navigate to **WP Manager → Security → Two-Factor**.
+  </Step>
+  <Step title="Click Disable 2FA">
+    Click the **Disable 2FA** button. A request is sent to `DELETE /security/2fa`.
+  </Step>
+  <Step title="Confirm removal">
+    The server deletes `wmp_2fa_secret`, `wmp_2fa_enabled`, `wmp_2fa_backup_codes`, and any pending setup state from your user meta. The tab returns to the initial setup state.
+  </Step>
+</Steps>
+
+---
+
+## Technical details
+
+<AccordionGroup>
+  <Accordion title="Secret generation">
+    ```php
+    $secret = random_bytes(20);         // 160-bit entropy from the OS CSPRNG
+    $secret = self::base32_encode($secret); // Custom RFC 4648 base32 encoder
+    ```
+    The pending secret is stored in `wmp_2fa_secret_pending` user meta until the first successful verification, at which point it is promoted to `wmp_2fa_secret` and the pending key is deleted.
+  </Accordion>
+  <Accordion title="TOTP verification">
+    ```php
+    $key     = self::base32_decode($secret);
+    $ts      = (int) floor(time() / 30);
+
+    // Check current window ±1 step
+    for ($i = -1; $i <= 1; $i++) {
+        $counter = pack('N*', 0, $ts + $i);
+        $hash    = hash_hmac('sha1', $counter, $key, true);
+        $offset  = ord($hash[19]) & 0x0F;
+        $otp     = (
+            ((ord($hash[$offset])     & 0x7F) << 24) |
+            ((ord($hash[$offset + 1]) & 0xFF) << 16) |
+            ((ord($hash[$offset + 2]) & 0xFF) <<  8) |
+             (ord($hash[$offset + 3]) & 0xFF)
+        ) % 1_000_000;
+
+        if (hash_equals(str_pad((string)$otp, 6, '0', STR_PAD_LEFT), $code)) {
+            return true;
+        }
+    }
+    ```
+    `hash_equals` is used for the final comparison to prevent timing attacks.
+  </Accordion>
+  <Accordion title="Backup code storage">
+    ```php
+    // Generation — plain codes returned to the user once
+    $codes = [];
+    for ($i = 0; $i < 8; $i++) {
+        $codes[] = strtoupper(bin2hex(random_bytes(4))); // 8-char hex string
+    }
+
+    // Storage — MD5 hashes saved to user meta
+    update_user_meta($user_id, 'wmp_2fa_backup_codes', array_map('md5', $codes));
+    ```
+  </Accordion>
+  <Accordion title="OTP URI format">
+    The QR code encodes the standard `otpauth://` URI:
+    ```
+    otpauth://totp/{issuer}:{label}?secret={secret}&issuer={issuer}&algorithm=SHA1&digits=6&period=30
+    ```
+    Where `{issuer}` is your site name and `{label}` is your user email address, both URL-encoded.
+  </Accordion>
+</AccordionGroup>
+
+## REST API
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/security/2fa` | Get 2FA enabled state and backup code count for the current user |
+| `POST` | `/security/2fa/setup` | Generate a new TOTP secret and QR code URL |
+| `POST` | `/security/2fa/verify` | Verify a 6-digit code and activate 2FA |
+| `DELETE` | `/security/2fa` | Disable 2FA and remove all secrets for the current user |

@@ -1,0 +1,78 @@
+---
+title: Audit Log
+description: Automatic tracking of plugin, theme, user, and post events with CSV export and action-type filtering.
+---
+
+Audit Log (new in v1.4.0) records administrative actions as they happen, giving you a timestamped trail of who did what and from which IP address.
+
+## Tracked events
+
+<AccordionGroup>
+  <Accordion title="Plugin events">
+    | Action | Trigger |
+    |---|---|
+    | `plugin.activated` | A plugin is activated |
+    | `plugin.deactivated` | A plugin is deactivated |
+    | `plugin.deleted` | A plugin is deleted |
+  </Accordion>
+
+  <Accordion title="Theme events">
+    | Action | Trigger |
+    |---|---|
+    | `theme.activated` | A theme is switched and activated |
+  </Accordion>
+
+  <Accordion title="User events">
+    | Action | Trigger |
+    |---|---|
+    | `user.login` | A user logs in successfully |
+    | `user.logout` | A user logs out |
+    | `user.login_failed` | A failed login attempt |
+    | `user.registered` | A new user account is created |
+  </Accordion>
+
+  <Accordion title="Content events">
+    | Action | Trigger |
+    |---|---|
+    | `content.published` | A post or page transitions to published status |
+  </Accordion>
+
+  <Accordion title="Backup events">
+    | Action | Trigger |
+    |---|---|
+    | `backup.created` | A database backup is created |
+    | `backup.deleted` | A backup file is deleted |
+  </Accordion>
+</AccordionGroup>
+
+## Log table
+
+Each entry in the audit log shows:
+
+| Column | Description |
+|---|---|
+| Date | Timestamp of the event |
+| User | Display name of the WordPress user who triggered the action |
+| Action | Colour-coded action badge |
+| Object | Name of the affected item (plugin name, theme name, post title, username) |
+| IP Address | The IP address of the request |
+
+## Filtering
+
+Use the **Filter by action** dropdown to narrow the log to a specific event type. The total event count updates to reflect the active filter. Click **Refresh** to reload the log without clearing the filter.
+
+## Exporting to CSV
+
+Click **Export CSV** to generate a downloadable CSV file containing all current log entries (including any active filter). The file is named with a timestamp and contains all columns shown in the log table.
+
+## Clearing the log
+
+Click **Clear Log** and confirm the dialog to permanently delete all audit log entries. This action cannot be undone.
+
+<Warning>
+Clearing the audit log is irreversible. Export the log to CSV first if you need to retain the records.
+</Warning>
+
+## Pagination
+
+The log is paginated at 50 entries per page. Use the previous/next buttons below the table to navigate older entries.
